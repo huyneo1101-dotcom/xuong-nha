@@ -1503,41 +1503,113 @@ function Doing({doing,setDoing,open}){
 }
 
 /* ---------------------------------------------------------------- di cho */
+function chep(txt, ok){
+  const done = ()=>ok && ok();
+  try{
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(done, ()=>fallback()); return; }
+  }catch(e){}
+  fallback();
+  function fallback(){
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.cssText='position:fixed;top:-1000px;opacity:0'; document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('Máy không cho chép tự động. Danh sách:\n\n'+txt); }
+    document.body.removeChild(ta);
+  }
+}
+
 function Shop({doing,shop,setShop,open}){
+  const [view,setView] = useState('noi');
+  const [xong,setXong] = useState(false);
   const ids = Object.keys(doing).filter(id=>byId(id));
   const key = (id,i)=> id+'::'+i;
   const toggle = k => { const s={...shop}; if(s[k]) delete s[k]; else s[k]={at:today()}; setShop(s); };
-  let need=0, spent=0;
-  ids.forEach(id=> byId(id).mats.forEach((m,i)=>{ if(shop[key(id,i)]) spent+=m.p; else need+=m.p; }));
+
+  /* mọi món của các dự án đang làm, phẳng ra một danh sách */
+  const items = [];
+  ids.forEach(id=>{ const p=byId(id);
+    p.mats.forEach((m,i)=> items.push({...m, k:key(id,i), pid:id, pname:p.name, co:!m.p||m.mua==='nha'})); });
+  const need  = items.filter(x=>!shop[x.k]).reduce((s,x)=>s+x.p,0);
+  const spent = items.filter(x=> shop[x.k]).reduce((s,x)=>s+x.p,0);
+  const conlai = items.filter(x=>!shop[x.k]).length;
+
+  /* gom theo nơi mua, nơi nào còn nhiều món chưa mua thì đứng trước */
+  const nhom = {};
+  items.forEach(x=>{ const g=x.mua||'cho'; (nhom[g]=nhom[g]||[]).push(x); });
+  const thutu = Object.keys(nhom).sort((a,b)=>
+    nhom[b].filter(x=>!shop[x.k]).length - nhom[a].filter(x=>!shop[x.k]).length);
+
+  const tickCa = arr => { const s={...shop}; const chuaXong=arr.some(x=>!s[x.k]);
+    arr.forEach(x=>{ if(chuaXong) s[x.k]={at:today()}; else delete s[x.k]; }); setShop(s); };
+
+  const vanban = ()=>{
+    const L=['DANH SÁCH ĐI CHỢ — Xưởng Nhà'];
+    thutu.forEach(g=>{ const chua=nhom[g].filter(x=>!shop[x.k]); if(!chua.length) return;
+      L.push('', (MUA[g]||g).toUpperCase());
+      chua.forEach(x=> L.push('- '+x.n+' · '+x.q+(x.p?' · ~'+vnd(x.p):'')));
+    });
+    L.push('', 'Tổng còn phải mua: '+vndFull(need));
+    return L.join('\n');
+  };
+
+  const Mon = ({x,showProj}) => { const b=!!shop[x.k];
+    return (
+      <div className="mat">
+        <div className={'tick'+(b?' on':'')} onClick={()=>toggle(x.k)}>{b&&<Ico d={ICONS.check}/>}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="between">
+            <b style={{fontSize:13.5,textDecoration:b?'line-through':'none',opacity:b?.5:1}}>{x.n}</b>
+            <span style={{color:b?'var(--tx3)':(x.co?'var(--tx2)':'var(--acc)'),fontWeight:600,fontSize:13,whiteSpace:'nowrap'}}>
+              {x.co?'có sẵn':vnd(x.p)}</span>
+          </div>
+          <p className="tiny" style={{marginTop:2}}>{x.q}{showProj?' · '+x.pname:''}{x.note?' — '+x.note:''}</p>
+        </div>
+      </div>);
+  };
+
   return (
     <div>
-      <div className="hd"><h1>Đi chợ</h1><p>Vật liệu gom từ các dự án đang làm</p></div>
+      <div className="hd">
+        <h1>Đi chợ</h1>
+        <p>{conlai ? conlai+' món chưa mua · '+vndFull(need) : 'Mua đủ rồi'}</p>
+        {!!ids.length && <div className="seg2">
+          <button className={view==='noi'?'on':''} onClick={()=>setView('noi')}>Theo nơi mua</button>
+          <button className={view==='du'?'on':''} onClick={()=>setView('du')}>Theo dự án</button>
+        </div>}
+      </div>
       <div className="wrap">
         {!ids.length && <div className="empty">Chưa có gì để mua.<br/>Bắt đầu một dự án thì vật liệu của nó hiện ở đây.</div>}
-        {!!ids.length && <div className="grid2" style={{marginTop:12}}>
-          <div className="kpi"><b>{vndFull(need)}</b><span>còn phải mua</span></div>
-          <div className="kpi"><b style={{color:'var(--tx2)'}}>{vndFull(spent)}</b><span>đã mua</span></div>
-        </div>}
-        {ids.map(id=>{ const p=byId(id);
+        {!!ids.length && <>
+          <div className="grid2" style={{marginTop:12}}>
+            <div className="kpi"><b>{vndFull(need)}</b><span>còn phải mua</span></div>
+            <div className="kpi"><b style={{color:'var(--tx2)'}}>{vndFull(spent)}</b><span>đã mua</span></div>
+          </div>
+          <button className="btn ghost" style={{marginTop:10}}
+            onClick={()=>chep(vanban(),()=>{ setXong(true); setTimeout(()=>setXong(false),1800); })}>
+            {xong ? '✓ Đã chép — dán vào Zalo được rồi' : 'Chép danh sách để gửi'}
+          </button>
+        </>}
+
+        {view==='noi' && thutu.map(g=>{ const arr=nhom[g]; const chua=arr.filter(x=>!shop[x.k]).length;
+          return (
+            <div className="card" key={g}>
+              <div className="between" style={{marginBottom:4}}>
+                <b style={{fontSize:14.5}}>{MUA[g]||g}</b>
+                <button className="btn sm ghost" onClick={()=>tickCa(arr)}>{chua?'Tick cả nhóm':'Bỏ tick'}</button>
+              </div>
+              <p className="tiny" style={{marginBottom:4}}>{chua? chua+'/'+arr.length+' món chưa mua' : 'xong nhóm này'}</p>
+              {arr.map(x=><Mon key={x.k} x={x} showProj={true}/>)}
+            </div>);
+        })}
+
+        {view==='du' && ids.map(id=>{ const p=byId(id); const arr=items.filter(x=>x.pid===id);
           return (
             <div className="card" key={id}>
               <div className="between" style={{marginBottom:6}}>
                 <b style={{fontSize:14.5}}>{p.name}</b>
                 <button className="btn sm ghost" onClick={()=>open(id)}>Mở</button>
               </div>
-              {p.mats.map((m,i)=>{ const k=key(id,i); const b=!!shop[k];
-                return (
-                  <div className="mat" key={i}>
-                    <div className={'tick'+(b?' on':'')} onClick={()=>toggle(k)}>{b&&<Ico d={ICONS.check}/>}</div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div className="between">
-                        <b style={{fontSize:13.5,textDecoration:b?'line-through':'none',opacity:b?.55:1}}>{m.n}</b>
-                        <span style={{color:b?'var(--tx3)':'var(--acc)',fontWeight:600,fontSize:13,whiteSpace:'nowrap'}}>{m.p?vnd(m.p):'có sẵn'}</span>
-                      </div>
-                      <p className="tiny" style={{marginTop:2}}>{m.q}</p>
-                    </div>
-                  </div>);
-              })}
+              {arr.map(x=><Mon key={x.k} x={x}/>)}
             </div>);
         })}
       </div>
