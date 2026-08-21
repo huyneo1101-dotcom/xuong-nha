@@ -48,6 +48,16 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
   background:var(--card2);border:1px solid var(--line);color:var(--tx2)}
 .chip.acc{color:var(--acc);border-color:var(--acc2)}
 .chip.warn{color:var(--warn);border-color:#6b4c17}
+.chip.tap{cursor:pointer}
+.chip.tap:active{background:var(--acc);color:var(--on-acc)}
+.seg2{display:flex;gap:0;margin-top:11px;background:var(--card2);border:1px solid var(--line);
+  border-radius:12px;padding:3px}
+.seg2 button{flex:1;background:none;border:none;color:var(--tx2);font:inherit;font-size:13.5px;
+  font-weight:600;padding:7px 0;border-radius:9px;cursor:pointer}
+.seg2 button.on{background:var(--acc);color:var(--on-acc)}
+.numdot{flex:0 0 23px;height:23px;border-radius:99px;background:var(--card2);border:1px solid var(--line);
+  color:var(--acc);font:600 12px/1 "Segoe UI",sans-serif;display:flex;align-items:center;
+  justify-content:center;margin-top:2px}
 body.light .chip.warn{border-color:#e2c48f}
 .pcard{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
 .thumb{flex:0 0 74px;height:74px;border-radius:13px;background:var(--card2);
@@ -1026,6 +1036,7 @@ const ICONS = {
 function App(){
   const [tab,setTab]      = useState('lib');
   const [open,setOpen]    = useState(()=>{ const m=/#p=([\w-]+)/.exec(location.hash); return m && byId(m[1]) ? m[1] : null; });
+  const [openKy,setOpenKy]= useState(()=>{ const m=/#k=([\w-]+)/.exec(location.hash); return m && kyById(m[1]) ? m[1] : null; });
   const [doing,setDoingS] = useState(()=>store.get(K.doing,{}));
   const [shop,setShopS]   = useState(()=>store.get(K.shop,{}));
   const [gal,setGalS]     = useState(()=>store.get(K.gal,[]));
@@ -1046,7 +1057,8 @@ function App(){
   }),[body]);
 
   const start = id => { if(doing[id]) return; setDoing({...doing,[id]:{started:today(),steps:{},done:false}}); };
-  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,open:setOpen,start};
+  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,
+                  open:setOpen,openKy:setOpenKy,start};
 
   const TABS = [['lib','Dự án',ICONS.lib],['doing','Đang làm',ICONS.doing],
                 ['shop','Đi chợ',ICONS.shop],['gal','Thành phẩm',ICONS.gal],['me','Tôi',ICONS.me]];
@@ -1058,6 +1070,7 @@ function App(){
       {tab==='gal'   && <Gallery {...shared}/>}
       {tab==='me'    && <Me {...shared} light={light} setLight={setLight}/>}
       {open && <ProjectView id={open} close={()=>setOpen(null)} {...shared}/>}
+      {openKy && <SkillView id={openKy} close={()=>setOpenKy(null)} open={setOpen}/>}
       <nav>{TABS.map(([k,label,d])=>(
         <button key={k} className={tab===k?'on':''} onClick={()=>setTab(k)}>
           <Ico d={d}/>{label}
@@ -1102,37 +1115,106 @@ function PCard({p,onClick,prog}){
   );
 }
 
-function Library({open,doing}){
+function Library({open,openKy,doing}){
+  const [mode,setMode] = useState('du');
   const [cat,setCat] = useState('all');
   const [q,setQ] = useState('');
   const list = PROJECTS.filter(p =>
     (cat==='all'||p.cat===cat) &&
     (!q || (p.name+' '+p.blurb+' '+p.cat).toLowerCase().includes(q.toLowerCase())));
+  const kyList = KYNANG.filter(k =>
+    !q || (k.ten+' '+k.tomtat+' '+k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
   const prog = p => { const d=doing[p.id]; if(!d) return null;
     return Math.round(Object.values(d.steps||{}).filter(s=>s.done).length / p.steps.length * 100); };
   return (
     <div>
       <div className="hd">
         <h1>Xưởng Nhà</h1>
-        <p>{PROJECTS.length} dự án tự làm · vật liệu mua được ở Việt Nam</p>
-        <div className="seg">
+        <p>{mode==='du' ? PROJECTS.length+' dự án tự làm · vật liệu mua được ở Việt Nam'
+                        : KYNANG.length+' kỹ năng nền — đọc trước khi bắt tay vào làm'}</p>
+        <div className="seg2">
+          <button className={mode==='du'?'on':''} onClick={()=>setMode('du')}>Dự án</button>
+          <button className={mode==='ky'?'on':''} onClick={()=>setMode('ky')}>Kỹ năng</button>
+        </div>
+        {mode==='du' && <div className="seg">
           <button className={cat==='all'?'on':''} onClick={()=>setCat('all')}>Tất cả</button>
           {CATS.map(c=><button key={c} className={cat===c?'on':''} onClick={()=>setCat(c)}>{c}</button>)}
-        </div>
+        </div>}
       </div>
       <div className="wrap">
         <div style={{marginTop:12}}>
-          <input placeholder="Tìm dự án…" value={q} onChange={e=>setQ(e.target.value)}/>
+          <input placeholder={mode==='du'?'Tìm dự án…':'Tìm kỹ năng…'} value={q} onChange={e=>setQ(e.target.value)}/>
         </div>
-        {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} onClick={()=>open(p.id)}/>)}
-        {!list.length && <div className="empty">Không có dự án nào khớp.</div>}
+        {mode==='du' && <>
+          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} onClick={()=>open(p.id)}/>)}
+          {!list.length && <div className="empty">Không có dự án nào khớp.</div>}
+        </>}
+        {mode==='ky' && <>
+          {kyList.map(k=>(
+            <div className="card pcard" key={k.id} onClick={()=>openKy(k.id)}>
+              <div className="thumb" style={{fontSize:30,flex:'0 0 60px',height:60}}>{k.icon}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <h3>{k.ten}</h3>
+                <p className="muted" style={{marginTop:3}}>{k.tomtat}</p>
+                <div className="meta">
+                  <span className="chip">{k.buoc.length} điều cốt lõi</span>
+                  <span className="chip">{PROJECTS.filter(p=>(p.skills||[]).includes(k.id)).length} dự án dùng</span>
+                </div>
+              </div>
+            </div>))}
+          {!kyList.length && <div className="empty">Không có kỹ năng nào khớp.</div>}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- doc ky nang */
+function SkillView({id,close,open}){
+  const k = kyById(id);
+  if(!k) return null;
+  const dung = PROJECTS.filter(p=>(p.skills||[]).includes(k.id));
+  return (
+    <div className="sheet" style={{zIndex:60}}>
+      <div className="shd">
+        <button className="back" onClick={close}>‹ Đóng</button>
+        <h1 style={{fontSize:19,fontWeight:600}}>{k.icon} {k.ten}</h1>
+      </div>
+      <div className="wrap">
+        <div className="card"><p className="muted" style={{fontSize:14,lineHeight:1.6}}>{k.tomtat}</p></div>
+        <div className="card">
+          <h3>Làm đúng thì làm thế này</h3>
+          {k.buoc.map((b,i)=>(
+            <div className="row" key={i} style={{marginTop:10,alignItems:'flex-start'}}>
+              <span className="numdot">{i+1}</span>
+              <p className="muted" style={{flex:1}}>{b}</p>
+            </div>))}
+        </div>
+        <div className="card">
+          <h3>Lỗi hay gặp</h3>
+          {k.loi.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>✕ {t}</p>)}
+        </div>
+        {k.an && k.an.map((t,i)=><div key={i} className="warnbox"><h4>An toàn</h4><p>{t}</p></div>)}
+        <div className="card">
+          <h3>Dụng cụ</h3>
+          <div className="meta" style={{marginTop:8}}>{k.dungcu.map(t=><span className="chip" key={t}>{t}</span>)}</div>
+        </div>
+        {!!dung.length && <div className="card">
+          <h3>Dự án dùng kỹ năng này</h3>
+          {dung.map(p=>(
+            <div className="row" key={p.id} style={{marginTop:10,cursor:'pointer'}} onClick={()=>{close(); open(p.id);}}>
+              <div style={{flex:1}}><b style={{fontSize:13.5}}>{p.name}</b>
+                <p className="tiny" style={{marginTop:1}}>{p.cat} · {DIFF[p.diff]} · {p.hours} giờ</p></div>
+              <span style={{color:'var(--acc)',fontSize:18}}>›</span>
+            </div>))}
+        </div>}
       </div>
     </div>
   );
 }
 
 /* ---------------------------------------------------------------- chi tiet du an */
-function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start}){
+function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy}){
   const p = byId(id);
   const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
   const d = doing[id];
@@ -1175,7 +1257,7 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
             {p.skills && !!p.skills.length && <>
               <p className="tiny" style={{marginTop:12,marginBottom:6}}>Kỹ năng dùng tới</p>
               <div className="meta">{p.skills.map(s=>{ const k=kyById(s); return k?
-                <span className="chip acc" key={s}>{k.icon} {k.ten}</span> : null; })}</div>
+                <span className="chip acc tap" key={s} onClick={()=>openKy(k.id)}>{k.icon} {k.ten} ›</span> : null; })}</div>
             </>}
           </div>
           {p.loi && !!p.loi.length && <div className="card">
