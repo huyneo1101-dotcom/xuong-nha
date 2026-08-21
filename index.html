@@ -346,6 +346,15 @@ const FIG = {
   }
 };
 
+/* Hình chỉ phụ thuộc số đo, mà số đo thì hiếm khi đổi — dựng một lần rồi giữ lại.
+   Chuỗi HTML giống hệt còn giúp React bỏ qua luôn việc ghi lại DOM. */
+const _kho_hinh = {};
+const figHTML = (ten,d) => {
+  const k = ten+'|'+d.chuVi+'|'+d.cung;
+  if(!_kho_hinh[k]) _kho_hinh[k] = (ten==='matcat' ? figMatCat(d) : FIG[ten](d));
+  return _kho_hinh[k];
+};
+
 /* mat cat doc — ban ve ky thuat */
 function figMatCat(d){
   const CX=178, CY=190, R=112, px = R/95;
@@ -1400,7 +1409,7 @@ function FocusMode({id,close,doing,setDoing,dims}){
         <div className="sn">BƯỚC {String(i+1).padStart(2,'0')} / {p.steps.length}</div>
         <h2 className="ftitle">{s.t}</h2>
         <p className="fdesc">{s.d}</p>
-        {s.fig && FIG[s.fig] && <div className="fig" dangerouslySetInnerHTML={{__html:FIG[s.fig](dims)}}/>}
+        {s.fig && FIG[s.fig] && <div className="fig" dangerouslySetInnerHTML={{__html:figHTML(s.fig,dims)}}/>}
         <textarea style={{marginTop:14}} placeholder="Ghi lại chỗ vướng, số đo thật, thứ phải mua thêm…"
           value={st.note} onChange={e=>setStep({note:e.target.value})}/>
         {xong && <div className="card" style={{marginTop:14,borderColor:'var(--acc)'}}>
@@ -1550,7 +1559,7 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
                   <h3 style={{marginTop:2,fontSize:15}}>{s.t}</h3>
                   <p className="muted" style={{marginTop:4}}>{s.d}</p>
                   {s.fig && FIG[s.fig] &&
-                    <div className="fig" dangerouslySetInnerHTML={{__html:FIG[s.fig](dims)}}/>}
+                    <div className="fig" dangerouslySetInnerHTML={{__html:figHTML(s.fig,dims)}}/>}
                   {d && <textarea style={{marginTop:8,minHeight:44,fontSize:13}} placeholder="Ghi chú của Huy ở bước này…"
                     value={st.note} onChange={e=>setStep(i,{note:e.target.value})}/>}
                 </div>
@@ -1612,7 +1621,7 @@ function DomeDraw({dims,body,setBody}){
     <div className="card">
       <h3>Mặt cắt dọc</h3>
       <p className="tiny" style={{marginTop:3}}>Khe rỗng 12 mm nằm trên đỉnh đầu · lớp xốp chịu va đập giữ nguyên 25 mm.</p>
-      <div className="fig" dangerouslySetInnerHTML={{__html:figMatCat(dims)}}/>
+      <div className="fig" dangerouslySetInnerHTML={{__html:figHTML('matcat',dims)}}/>
       {[['1','Vỏ nhựa ABS','giữ nguyên như mũ đạt chuẩn'],
         ['2','Xốp EPS 25 mm','không gọt, không khoan một milimét'],
         ['3','Khe rỗng 12 mm','tóc dựng tự do, hơi ẩm có đường thoát'],
@@ -1627,7 +1636,7 @@ function DomeDraw({dims,body,setBody}){
     </div>
     <div className="card">
       <h3>Dưỡng cắt</h3>
-      <div className="fig" dangerouslySetInnerHTML={{__html:FIG.duong(dims)}}/>
+      <div className="fig" dangerouslySetInnerHTML={{__html:figHTML('duong',dims)}}/>
     </div>
   </>);
 }
