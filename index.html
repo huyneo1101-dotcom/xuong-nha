@@ -55,6 +55,11 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
 .seg2 button{flex:1;background:none;border:none;color:var(--tx2);font:inherit;font-size:13.5px;
   font-weight:600;padding:7px 0;border-radius:9px;cursor:pointer}
 .seg2 button.on{background:var(--acc);color:var(--on-acc)}
+.fltrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;align-items:center}
+.fchip{background:var(--card);border:1px solid var(--line);color:var(--tx2);font:inherit;font-size:12.5px;
+  padding:6px 12px;border-radius:999px;cursor:pointer}
+.fchip.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc);font-weight:600}
+.fsel{width:auto;flex:1;min-width:132px;font-size:12.5px;padding:6px 9px;border-radius:999px;color:var(--tx2)}
 .numdot{flex:0 0 23px;height:23px;border-radius:99px;background:var(--card2);border:1px solid var(--line);
   color:var(--acc);font:600 12px/1 "Segoe UI",sans-serif;display:flex;align-items:center;
   justify-content:center;margin-top:2px}
@@ -141,6 +146,7 @@ const vndFull = n => n.toLocaleString('vi-VN')+'đ';
 const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 const dateVN = s => { const p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; };
 const DIFF = {1:'Dễ',2:'Vừa',3:'Khó'};
+const gio = h => h<1 ? Math.round(h*60)+' phút' : (h%1 ? h.toString().replace('.',',') : h)+' giờ';
 const P = (cx,cy,r,deg)=>{ const a=deg*Math.PI/180; return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; };
 
 /* ---------------------------------------------------------------- hinh ve DOME-01 (SVG parametric) */
@@ -1106,8 +1112,10 @@ function PCard({p,onClick,prog}){
         <div className="meta">
           <span className="chip">{p.cat}</span>
           <span className="chip">{DIFF[p.diff]}</span>
-          <span className="chip">{p.hours} giờ</span>
+          <span className="chip">{gio(p.hours)}</span>
           <span className="chip acc">{vnd(projCost(p))}</span>
+          {p.flags && p.flags.onao>=3 && <span className="chip warn">ồn</span>}
+          {p.flags && p.flags.chungcu===false && <span className="chip warn">cần khoan tường</span>}
         </div>
         {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
       </div>
@@ -1119,9 +1127,20 @@ function Library({open,openKy,doing}){
   const [mode,setMode] = useState('du');
   const [cat,setCat] = useState('all');
   const [q,setQ] = useState('');
+  const [sort,setSort] = useState('mac');
+  const [flt,setFlt] = useState([]);
+  const tog = f => setFlt(flt.includes(f) ? flt.filter(x=>x!==f) : flt.concat(f));
+  const hop = p =>
+    (!flt.includes('nhanh') || p.hours<=1) &&
+    (!flt.includes('re')    || projCost(p)<=100000) &&
+    (!flt.includes('de')    || p.diff===1) &&
+    (!flt.includes('cc')    || !p.flags || p.flags.chungcu!==false);
+  const SORTS = {mac:()=>0, de:(a,b)=>a.diff-b.diff||a.hours-b.hours,
+                 re:(a,b)=>projCost(a)-projCost(b), nhanh:(a,b)=>a.hours-b.hours};
   const list = PROJECTS.filter(p =>
-    (cat==='all'||p.cat===cat) &&
-    (!q || (p.name+' '+p.blurb+' '+p.cat).toLowerCase().includes(q.toLowerCase())));
+    (cat==='all'||p.cat===cat) && hop(p) &&
+    (!q || (p.name+' '+p.blurb+' '+p.cat+' '+p.mats.map(m=>m.n).join(' ')+' '+p.tools.join(' ')).toLowerCase().includes(q.toLowerCase())))
+    .slice().sort(SORTS[sort]);
   const kyList = KYNANG.filter(k =>
     !q || (k.ten+' '+k.tomtat+' '+k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
   const prog = p => { const d=doing[p.id]; if(!d) return null;
@@ -1146,8 +1165,19 @@ function Library({open,openKy,doing}){
           <input placeholder={mode==='du'?'Tìm dự án…':'Tìm kỹ năng…'} value={q} onChange={e=>setQ(e.target.value)}/>
         </div>
         {mode==='du' && <>
+          <div className="fltrow">
+            {[['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']].map(([k,l])=>
+              <button key={k} className={'fchip'+(flt.includes(k)?' on':'')} onClick={()=>tog(k)}>{l}</button>)}
+            <select className="fsel" value={sort} onChange={e=>setSort(e.target.value)}>
+              <option value="mac">Thứ tự mặc định</option>
+              <option value="de">Dễ trước</option>
+              <option value="re">Rẻ trước</option>
+              <option value="nhanh">Nhanh trước</option>
+            </select>
+          </div>
+          <p className="tiny" style={{margin:'10px 2px 0'}}>{list.length} dự án</p>
           {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} onClick={()=>open(p.id)}/>)}
-          {!list.length && <div className="empty">Không có dự án nào khớp.</div>}
+          {!list.length && <div className="empty">Không có dự án nào khớp.<br/>Bỏ bớt một bộ lọc thử xem.</div>}
         </>}
         {mode==='ky' && <>
           {kyList.map(k=>(
