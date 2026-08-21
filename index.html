@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Xưởng Nhà — góc tự làm</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
@@ -171,6 +176,13 @@ label.fl{display:block;font-size:12px;color:var(--tx3);margin:0 0 5px 2px}
       else if(document.getElementById('root').children.length===0) b.innerHTML='<b style="color:#ff7b7b">Ứng dụng không khởi động được.</b><br><br>Mở DevTools (F12) → Console để xem lỗi cú pháp.';
     },2500);
     try{ var t=localStorage.getItem('diy.theme'); if(t==='light') document.body.classList.add('light'); }catch(e){}
+    /* Service worker chỉ đăng ký khi trang chạy qua http/https.
+       Mở bằng file:// thì trình duyệt chặn, và đó là chuyện bình thường. */
+    if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+      window.addEventListener('load', function(){
+        navigator.serviceWorker.register('sw.js').catch(function(){});
+      });
+    }
   })();
 </script>
 <script type="text/babel" data-presets="react">
@@ -1945,6 +1957,15 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
           <div className="between"><div><h3>Giao diện sáng</h3>
             <p className="tiny" style={{marginTop:2}}>Dễ nhìn hơn khi làm ngoài sân.</p></div>
             <button className="btn sm" onClick={()=>setLight(!light)}>{light?'Đang sáng':'Đang tối'}</button></div>
+        </div>
+        <div className="card">
+          <h3>Cài lên màn hình chính</h3>
+          <p className="tiny" style={{marginTop:4,lineHeight:1.6}}>
+            Mở app bằng Chrome trên điện thoại → menu ⋮ → <b style={{color:'var(--tx)'}}>Thêm vào màn hình chính</b>.
+            Trên iPhone dùng Safari → nút Chia sẻ → Thêm vào MH chính.
+            Cài rồi thì mở như một app thật, và <b style={{color:'var(--tx)'}}>mất mạng vẫn dùng được</b> —
+            trừ lần mở đầu tiên cần mạng để tải thư viện về máy.
+          </p>
         </div>
         <div className="card">
           <h3>Dữ liệu</h3>
