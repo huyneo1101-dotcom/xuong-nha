@@ -867,6 +867,147 @@ const PROJECTS = [
 }
 ];
 /* == /DATA:PROJECTS == */
+
+/* == DATA:KYNANG ==  Chín kỹ năng nền. Dự án khai skills[] trỏ vào đây. */
+const KYNANG = [
+{
+  id:'do', ten:'Đo và vạch dấu', icon:'📏',
+  tomtat:'Kỹ năng rẻ nhất và cứu được nhiều tiền nhất. Gần như mọi món hỏng trong nhà đều hỏng từ bước đo.',
+  buoc:[
+    'Đo hai lần, cắt một lần. Lần thứ hai đo từ đầu kia lại — sai số sẽ tự lộ ra.',
+    'Luôn đo từ cùng một mốc. Đổi mốc giữa chừng là cộng dồn sai số.',
+    'Vạch dấu bằng một nét mảnh, cắt sát mép ngoài nét, đừng cắt vào giữa nét.',
+    'Vật cong hoặc dài: căng dây rồi đo dây, đừng bẻ thước theo vật.',
+    'Ghi số ra giấy ngay khi đo. Nhớ trong đầu ba số là quên một.'
+  ],
+  loi:['Đo bằng thước cuộn mà không ấn lưỡi móc — hụt hoặc dư đúng 2 mm mỗi lần.',
+       'Quên trừ bề dày lưỡi cắt: mỗi nhát cưa ăn mất 2–3 mm gỗ.',
+       'Dùng số đo của người khác cho đồ của mình (đầu, cửa, bàn đều khác nhau).'],
+  dungcu:['Thước dây mềm','Thước cuộn kim loại','Thước vuông (ê-ke)','Bút chì cứng hoặc bút vạch dấu']
+},
+{
+  id:'cat', ten:'Cắt bằng dao rọc giấy', icon:'🔪',
+  tomtat:'Cắt vải, xốp, nhựa mỏng, bìa. Lưỡi cùn nguy hiểm hơn lưỡi sắc — vì phải ấn mạnh nên trượt là đâm.',
+  buoc:[
+    'Bẻ đốt lưỡi cho sắc trước mỗi việc lớn. Lưỡi rẻ hơn ngón tay rất nhiều.',
+    'Kéo dao nhiều lượt nhẹ, đừng cố ăn hết bề dày trong một nhát.',
+    'Luôn cắt dọc theo thước sắt, không dùng thước nhựa (dao ăn vào thước là trượt).',
+    'Bàn tay giữ thước đặt xa đường cắt, các ngón nắm lại chứ không xoè ra.',
+    'Kê tấm lót phía dưới, và cắt theo hướng ra xa người.'
+  ],
+  loi:['Cắt vát lưỡi dao: mép nghiêng, hai mảnh ghép vào nhau hở.',
+       'Dùng lưỡi cùn cho xốp — xốp bị xé chứ không đứt, mép nham nhở.'],
+  an:['Rút lưỡi vào ngay khi buông dao xuống bàn.'],
+  dungcu:['Dao rọc giấy lưỡi 18 mm','Thước sắt','Tấm lót cắt']
+},
+{
+  id:'cua', ten:'Cưa tay', icon:'🪚',
+  tomtat:'Cưa gỗ, ống nhựa, thanh nhôm. Vấn đề của người mới không phải sức, mà là giữ cho đường cưa thẳng.',
+  buoc:[
+    'Vạch đường cưa quanh cả bốn mặt của thanh, không chỉ mặt trên.',
+    'Bắt đầu bằng vài nhát kéo ngược nhẹ để tạo rãnh, rồi mới đẩy.',
+    'Cưa bằng cả chiều dài lưỡi, nhịp chậm và đều — nhanh là lệch.',
+    'Kẹp chặt vật vào bàn. Vật rung là đường cưa lượn sóng.',
+    'Gần đứt thì đỡ phần rơi, nếu không mảnh cuối sẽ bị toác.'
+  ],
+  loi:['Ấn mạnh xuống lưỡi cưa: lưỡi kẹt, cong, và đường cưa chạy lệch.',
+       'Cưa ống nhựa bằng lưỡi cưa gỗ răng to — nhựa vỡ mép thay vì đứt gọn.'],
+  dungcu:['Cưa tay răng nhỏ','Cưa sắt (cho nhựa, kim loại)','Kẹp chữ C hoặc ê-tô']
+},
+{
+  id:'khoan', ten:'Khoan tường', icon:'🔩',
+  tomtat:'Việc dễ gây hỏng nhất trong nhà: khoan trúng dây điện hoặc ống nước. Ba phút kiểm tra đổi lấy cả buổi đục tường.',
+  buoc:[
+    'Dò trước: máy dò kim loại/điện, hoặc tránh vùng thẳng đứng phía trên và dưới ổ cắm, công tắc.',
+    'Chọn mũi đúng vật liệu: mũi bê tông cho tường gạch, mũi gỗ cho gỗ, mũi sắt cho kim loại.',
+    'Dán băng dính lên mũi làm cữ độ sâu — khoan sâu quá là thủng sang phòng bên.',
+    'Khoan chế độ búa cho tường gạch, tắt búa khi khoan gạch men (nếu không sẽ nứt men).',
+    'Nở phải chìm hẳn trong tường, không thò ra. Nở thò là vít không siết được.'
+  ],
+  loi:['Dùng nở nhựa 6 mm cho tải nặng: tuột dần theo thời gian.',
+       'Khoan tường thạch cao rồi đóng nở thường — cả mảng rơi khi treo đồ.',
+       'Không hút bụi lỗ khoan: bụi kẹt làm nở không vào hết.'],
+  an:['Đeo kính. Mảnh gạch bắn ra rất nhanh và luôn hướng lên mặt.'],
+  dungcu:['Khoan búa','Bộ mũi khoan','Nở nhựa và nở bướm','Máy dò trong tường']
+},
+{
+  id:'khau', ten:'Khâu tay mũi đột', icon:'🧵',
+  tomtat:'Một đường khâu tay đúng cách chắc hơn máy khâu gia đình. Chỉ cần một mũi duy nhất: mũi đột.',
+  buoc:[
+    'Mũi đột: đâm kim lên, lùi lại nửa mũi đâm xuống, rồi tiến lên một mũi rưỡi. Mặt trên thành một đường liền như máy khâu.',
+    'Mũi đều 3 mm. Vạch phấn một đường mờ để khâu theo.',
+    'Chỗ chịu lực (quai túi, chân dây) khâu ô chữ nhật rồi gạch chéo hai đường.',
+    'Kết thúc bằng 3 mũi đè lên nhau ở mặt trái, đừng thắt nút to.',
+    'Chỉ dài quá một sải tay là rối. Ngắn thôi, nối nhiều lần.'
+  ],
+  loi:['Kéo chỉ quá căng: vải nhăn nhúm dọc đường khâu.',
+       'Khâu vải dày bằng kim nhỏ — kim cong rồi gãy.'],
+  dungcu:['Kim khâu tay số 5','Kim khâu bao đầu tam giác','Chỉ dù / chỉ bền màu','Phấn vẽ vải','Đê']
+},
+{
+  id:'dan', ten:'Dán — chọn đúng keo', icon:'🧴',
+  tomtat:'Mối dán bung gần như luôn vì chọn sai keo hoặc mặt dán chưa sạch, chứ không phải vì ít keo.',
+  buoc:[
+    'Gỗ với gỗ: keo sữa (PVA). Cần chịu nước thì keo gỗ D3 hoặc polyurethane.',
+    'Nhựa với kim loại, chỗ chịu lực: epoxy hai thành phần.',
+    'Xốp EPS: keo gốc nước hoặc silicon trung tính. Keo 502 và keo gốc dung môi ăn thủng xốp.',
+    'Chỗ cần đàn hồi, kín nước: silicon trung tính.',
+    'Mặt dán phải nhám, sạch, khô. Chà nhám mặt bóng trước khi dán.',
+    'Ép chặt trong thời gian khô ghi trên vỏ, đừng chỉ đặt lên.'
+  ],
+  loi:['Bôi keo mới đè lên keo cũ — mối dán bung lại sau vài ngày.',
+       'Bôi thật nhiều keo cho chắc: keo dày là mối yếu, lớp keo mỏng đều mới khoẻ.'],
+  an:['Keo 502 dính tay: ngâm nước ấm pha xà phòng rồi từ từ tách, đừng giật.'],
+  dungcu:['Keo sữa gỗ','Epoxy 2 thành phần','Silicon trung tính','Súng bắn keo nến','Kẹp chữ C']
+},
+{
+  id:'son', ten:'Sơn xịt và lau dầu', icon:'🎨',
+  tomtat:'Lớp phủ đẹp là kết quả của khâu chuẩn bị, không phải của loại sơn đắt. 80% công là chà nhám và lau bụi.',
+  buoc:[
+    'Chà nhám từ thô đến mịn (#120 → #240), luôn xuôi thớ gỗ.',
+    'Lau sạch bụi bằng khăn ẩm, chờ khô hẳn mới sơn.',
+    'Sơn xịt: lắc 1 phút, xịt cách 25 cm, đưa đều tay, nhiều lớp thật mỏng.',
+    'Lớp sau cách lớp trước 15–20 phút. Mỗi lớp mỏng khô nhanh và không chảy.',
+    'Lau dầu gỗ: đổ trực tiếp, xoa đều, chờ ngấm 30 phút rồi lau sạch phần thừa.',
+    'Đồ tiếp xúc thức ăn chỉ dùng dầu food-grade, không dùng dầu ăn thường.'
+  ],
+  loi:['Xịt một lớp dày cho nhanh — chảy thành vệt, phải nhám lại từ đầu.',
+       'Sơn trong phòng kín: hại phổi, và bụi trong nhà bám hết vào lớp sơn ướt.'],
+  an:['Xịt ngoài trời hoặc chỗ thoáng, đeo khẩu trang than hoạt tính.'],
+  dungcu:['Giấy nhám #120 #240','Sơn xịt','Dầu lau gỗ','Khẩu trang','Găng tay']
+},
+{
+  id:'oc', ten:'Vặn ốc, siết đúng lực', icon:'🔧',
+  tomtat:'Siết quá tay hỏng nhiều đồ hơn siết lỏng. Ren nhôm và nhựa rất mềm, toét ren là hỏng cả cụm.',
+  buoc:[
+    'Dùng đúng cỡ khẩu/tua vít. Cỡ lệch là tròn đầu ốc, sau đó không tháo được nữa.',
+    'Vặn tay vài vòng đầu để ăn đúng ren, rồi mới dùng dụng cụ.',
+    'Siết chắc tay là đủ với ốc nhỏ. Đừng nối ống dài để lấy thêm lực.',
+    'Nhiều ốc trên một mặt: siết chéo nhau và siết làm hai lượt.',
+    'Ốc hay tự lỏng vì rung: chấm keo khoá ren loại tháo được.'
+  ],
+  loi:['Siết ốc xả nhớt quá tay: toét ren lốc máy, sửa rất đắt.',
+       'Dùng kìm thay khẩu — tròn cạnh ốc.'],
+  dungcu:['Bộ khẩu và tay vặn','Tua vít 4 cạnh và dẹt','Lục giác','Mỏ lết']
+},
+{
+  id:'dien', ten:'An toàn điện', icon:'⚡',
+  tomtat:'Ranh giới rõ ràng: đồ chạy pin và 5–12 V thì tự làm thoải mái. Dính tới 220 V thì gọi thợ.',
+  buoc:[
+    'Trước khi đụng vào bất cứ thứ gì có dây cắm tường: rút phích, ngắt aptomat của mạch đó.',
+    'Thử lại bằng bút thử điện, đừng tin vào việc đã gạt cầu dao.',
+    'Nước và điện không đứng cạnh nhau. Thiết bị tự chế có nước phải chạy pin hoặc adapter hạ áp.',
+    'Dùng đúng tiết diện dây và đúng adapter theo công suất. Dây nóng khi chạy là dây sai.',
+    'Đấu nối phải bọc kín bằng ống co nhiệt hoặc cút nối, không quấn tạm băng dính.'
+  ],
+  loi:['Đấu trực tiếp 220 V vào đồ tự chế bằng thùng xốp, thùng nhựa.',
+       'Nối dây bằng cách xoắn rồi quấn băng dính điện — nóng, chảy, chập.'],
+  an:['Việc phải chạm vào dây 220 V trong tường, tủ điện, cầu dao: gọi thợ điện. Không có ngoại lệ.'],
+  dungcu:['Bút thử điện','Kìm tuốt dây','Ống co nhiệt','Đồng hồ đo điện']
+}
+];
+const kyById = id => KYNANG.find(k=>k.id===id);
+/* == /DATA:KYNANG == */
 const byId = id => PROJECTS.find(p=>p.id===id);
 const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
 
@@ -1031,6 +1172,11 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
           <div className="card">
             <h3>Dụng cụ cần có</h3>
             {p.tools.map((t,i)=><p key={i} className="muted" style={{marginTop:6}}>· {t}</p>)}
+            {p.skills && !!p.skills.length && <>
+              <p className="tiny" style={{marginTop:12,marginBottom:6}}>Kỹ năng dùng tới</p>
+              <div className="meta">{p.skills.map(s=>{ const k=kyById(s); return k?
+                <span className="chip acc" key={s}>{k.icon} {k.ten}</span> : null; })}</div>
+            </>}
           </div>
           {p.loi && !!p.loi.length && <div className="card">
             <h3>Lỗi hay gặp</h3>
