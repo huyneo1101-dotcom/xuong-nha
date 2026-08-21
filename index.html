@@ -1902,6 +1902,27 @@ function Gallery({gal,setGal,doing,open}){
   );
 }
 /* ---------------------------------------------------------------- toi */
+/* ---- sao luu ---- */
+function goiDuLieu(){
+  const d = {app:'xuongnha', ban:1, ngay:today(), kho:{}};
+  Object.values(K).forEach(k => { const v = store.get(k,null); if(v!==null) d.kho[k]=v; });
+  return d;
+}
+function taiVe(ten, noiDung){
+  try{
+    const b = new Blob([noiDung], {type:'application/json'});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement('a'); a.href=u; a.download=ten;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(u), 4000);
+    return true;
+  }catch(e){ return false; }
+}
+function coCu(){ /* ước lượng chỗ đang chiếm, tính theo ký tự */
+  let n=0; Object.values(K).forEach(k=>{ try{ const v=localStorage.getItem(k); if(v) n+=v.length; }catch(e){} });
+  return n;
+}
+
 function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
   const togDC = id => setKho(kho.includes(id) ? kho.filter(x=>x!==id) : kho.concat(id));
   const thieuTien = DUNGCU.filter(d=>d.nen && !kho.includes(d.id)).reduce((s,d)=>s+d.p,0);
@@ -1910,8 +1931,10 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
   const finished = Object.keys(doing).filter(id=>{ const p=byId(id); if(!p) return false;
     return Object.values(doing[id].steps||{}).filter(s=>s.done).length===p.steps.length; }).length;
   let spent=0; Object.keys(shop).forEach(k=>{ const [id,i]=k.split('::'); const p=byId(id); if(p&&p.mats[i]) spent+=p.mats[i].p; });
-  const wipe = ()=>{ if(confirm('Xoá toàn bộ dữ liệu trong app? Không lấy lại được.')){
-    [K.doing,K.shop,K.gal,K.body].forEach(k=>store.del(k)); location.reload(); } };
+  const wipe = ()=>{ if(confirm('Xoá toàn bộ dữ liệu trong app? Không lấy lại được.\n\nNên bấm "Sao lưu ra file" trước.')){
+    Object.values(K).forEach(k=>store.del(k)); location.reload(); } };
+  /* giờ thật đã bỏ ra, lấy từ các mục thành phẩm có khai */
+  const gioThat = gal.reduce((s,g)=> s + (parseFloat(String(g.gio||'').replace(',','.'))||0), 0);
   return (
     <div>
       <div className="hd"><h1>Tôi</h1><p>Số đo, thống kê, cài đặt</p></div>
@@ -1921,6 +1944,8 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
           <div className="kpi"><b>{finished}</b><span>dự án làm xong</span></div>
           <div className="kpi"><b>{gal.length}</b><span>thành phẩm đã lưu</span></div>
           <div className="kpi"><b style={{fontSize:16}}>{vndFull(spent)}</b><span>vật liệu đã mua</span></div>
+          {gioThat>0 && <div className="kpi"><b>{String(gioThat).replace('.',',')} giờ</b><span>đã bỏ ra, theo ghi chép của Huy</span></div>}
+          {kho.length>0 && <div className="kpi"><b>{kho.length}/{DUNGCU.length}</b><span>dụng cụ đã có trong nhà</span></div>}
         </div>
         <div className="card">
           <div className="between"><h3>Kho dụng cụ nhà mình</h3>
@@ -1969,10 +1994,36 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
         </div>
         <div className="card">
           <h3>Dữ liệu</h3>
-          <p className="tiny" style={{marginTop:3}}>Mọi thứ lưu ngay trong trình duyệt máy này, không gửi đi đâu cả.</p>
+          <p className="tiny" style={{marginTop:3,lineHeight:1.6}}>
+            Mọi thứ lưu ngay trong trình duyệt máy này, không gửi đi đâu cả — nghĩa là
+            <b style={{color:'var(--tx)'}}> xoá lịch sử trình duyệt là mất sạch</b>. Thỉnh thoảng bấm sao lưu một lần.
+            Đang chiếm khoảng {(coCu()/1024).toFixed(0)} KB{gal.length? ' (chủ yếu là '+gal.length+' ảnh thành phẩm)':''}.
+          </p>
+          <div className="row" style={{marginTop:11}}>
+            <button className="btn sm" onClick={()=>{
+              const ok = taiVe('xuongnha-'+today()+'.json', JSON.stringify(goiDuLieu()));
+              if(!ok) alert('Máy không cho tải file. Thử mở app bằng Chrome.');
+            }}>Sao lưu ra file</button>
+            <label className="btn sm ghost" style={{textAlign:'center'}}>
+              Phục hồi từ file
+              <input type="file" accept="application/json,.json" style={{display:'none'}}
+                onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return;
+                  const r=new FileReader();
+                  r.onload=ev=>{ try{
+                      const d=JSON.parse(ev.target.result);
+                      if(!d || d.app!=='xuongnha' || !d.kho) throw new Error('sai định dạng');
+                      const soDA=Object.keys(d.kho['diy.doing']||{}).length;
+                      const soAnh=(d.kho['diy.gallery']||[]).length;
+                      if(!confirm('Bản lưu ngày '+dateVN(d.ngay||'')+': '+soDA+' dự án đang làm, '+soAnh+' thành phẩm.\n\nGhi đè toàn bộ dữ liệu hiện tại?')) return;
+                      Object.keys(d.kho).forEach(k=>store.set(k,d.kho[k]));
+                      location.reload();
+                    }catch(err){ alert('Không đọc được file này: '+err.message); } };
+                  r.readAsText(f); e.target.value=''; }}/>
+            </label>
+          </div>
           <button className="btn ghost sm" style={{marginTop:11,color:'var(--bad)',borderColor:'var(--bad)'}} onClick={wipe}>Xoá toàn bộ dữ liệu</button>
         </div>
-        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà v1 · {PROJECTS.length} dự án</p>
+        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà · {PROJECTS.length} dự án · {KYNANG.length} kỹ năng</p>
       </div>
     </div>
   );
