@@ -48,6 +48,7 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
   background:var(--card2);border:1px solid var(--line);color:var(--tx2)}
 .chip.acc{color:var(--acc);border-color:var(--acc2)}
 .chip.warn{color:var(--warn);border-color:#6b4c17}
+.chip.ok{color:var(--acc);border-color:var(--acc2)}
 .chip.tap{cursor:pointer}
 .chip.tap:active{background:var(--acc);color:var(--on-acc)}
 .seg2{display:flex;gap:0;margin-top:11px;background:var(--card2);border:1px solid var(--line);
@@ -156,7 +157,8 @@ const store = (()=>{ let ok=true, mem={};
     del(k){ try{ if(ok) localStorage.removeItem(k); else delete mem[k]; }catch(e){} }
   };
 })();
-const K = {doing:'diy.doing', shop:'diy.shop', gal:'diy.gallery', body:'diy.body', theme:'diy.theme'};
+const K = {doing:'diy.doing', shop:'diy.shop', gal:'diy.gallery', body:'diy.body',
+           theme:'diy.theme', kho:'diy.kho'};
 
 /* ---------------------------------------------------------------- tien ich */
 const vnd = n => n>=1000 ? (n/1000).toLocaleString('vi-VN',{maximumFractionDigits:0})+'k' : n+'đ';
@@ -1041,6 +1043,30 @@ const KYNANG = [
 }
 ];
 const kyById = id => KYNANG.find(k=>k.id===id);
+
+/* == DATA:DUNGCU ==  Bộ dụng cụ chuẩn. Dự án suy ra dụng cụ cần từ skills[]. */
+const DUNGCU = [
+  {id:'thuoc',  ten:'Thước dây + thước cuộn', p:25000,  nen:1, ky:['do']},
+  {id:'dao',    ten:'Dao rọc giấy + thước sắt', p:35000, nen:1, ky:['cat']},
+  {id:'keo',    ten:'Kéo cắt vải', p:45000, ky:['khau']},
+  {id:'kim',    ten:'Kim chỉ khâu tay', p:25000, nen:1, ky:['khau']},
+  {id:'nham',   ten:'Giấy nhám các cỡ', p:15000, nen:1, ky:['son']},
+  {id:'tuavit', ten:'Bộ tua vít', p:80000, nen:1, ky:['oc','khoan']},
+  {id:'kep',    ten:'Kẹp chữ C', p:60000, ky:['dan']},
+  {id:'keonen', ten:'Súng bắn keo nến', p:80000, ky:['dan']},
+  {id:'cua',    ten:'Cưa tay răng nhỏ', p:90000, ky:['cua']},
+  {id:'cuasat', ten:'Cưa sắt', p:70000, ky:['cua']},
+  {id:'mole',   ten:'Mỏ lết', p:70000, ky:['oc']},
+  {id:'khau',   ten:'Bộ khẩu và lục giác', p:150000, ky:['oc']},
+  {id:'nivo',   ten:'Ni-vô', p:50000, ky:['khoan']},
+  {id:'khoan',  ten:'Máy khoan búa', p:600000, ky:['khoan']},
+  {id:'butthu', ten:'Bút thử điện', p:25000, nen:1, ky:['dien']},
+  {id:'bula',   ten:'Bàn là', p:250000, ky:['khau']}
+];
+const dcById = id => DUNGCU.find(d=>d.id===id);
+/* dụng cụ một dự án cần = hợp của dụng cụ mọi kỹ năng nó dùng */
+const dcOf = p => DUNGCU.filter(d => (d.ky||[]).some(k => (p.skills||[]).includes(k))).map(d=>d.id);
+/* == /DATA:DUNGCU == */
 /* == /DATA:KYNANG == */
 const byId = id => PROJECTS.find(p=>p.id===id);
 const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
@@ -1066,6 +1092,8 @@ function App(){
   const [gal,setGalS]     = useState(()=>store.get(K.gal,[]));
   const [body,setBodyS]   = useState(()=>store.get(K.body,{chuVi:570,cung:330}));
   const [light,setLight]  = useState(()=>store.get(K.theme,'dark')==='light');
+  const [kho,setKhoS]     = useState(()=>store.get(K.kho,[]));
+  const setKho = v => { setKhoS(v); store.set(K.kho,v); };
 
   const setDoing = v => { setDoingS(v); store.set(K.doing,v); };
   const setShop  = v => { setShopS(v);  store.set(K.shop,v); };
@@ -1083,7 +1111,7 @@ function App(){
   const start = id => { if(doing[id]) return; setDoing({...doing,[id]:{started:today(),steps:{},done:false}}); };
   const [lamNgay,setLamNgay] = useState(false);
   const openLam = id => { start(id); setOpen(id); setLamNgay(true); };
-  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,
+  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,kho,setKho,
                   open:setOpen,openKy:setOpenKy,openLam,start};
 
   const TABS = [['lib','Dự án',ICONS.lib],['doing','Đang làm',ICONS.doing],
@@ -1123,7 +1151,10 @@ function Thumb({p}){
     'stroke-linejoin="round" opacity=".9">'+(CAT_ICON[p.cat]||CAT_ICON['Đồ dùng'])+'</g></svg>'}}/>;
 }
 
-function PCard({p,onClick,prog}){
+const thieuDC = (p,kho) => dcOf(p).filter(id=>!(kho||[]).includes(id));
+
+function PCard({p,onClick,prog,kho}){
+  const thieu = kho ? thieuDC(p,kho) : [];
   return (
     <div className="card pcard" onClick={onClick}>
       <Thumb p={p}/>
@@ -1137,6 +1168,9 @@ function PCard({p,onClick,prog}){
           <span className="chip acc">{vnd(projCost(p))}</span>
           {p.flags && p.flags.onao>=3 && <span className="chip warn">ồn</span>}
           {p.flags && p.flags.chungcu===false && <span className="chip warn">cần khoan tường</span>}
+          {kho && kho.length>0 && (thieu.length
+            ? <span className="chip warn">thiếu {thieu.length} dụng cụ</span>
+            : <span className="chip ok">đủ dụng cụ</span>)}
         </div>
         {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
       </div>
@@ -1144,7 +1178,7 @@ function PCard({p,onClick,prog}){
   );
 }
 
-function Library({open,openKy,doing}){
+function Library({open,openKy,doing,kho}){
   const [mode,setMode] = useState('du');
   const [cat,setCat] = useState('all');
   const [q,setQ] = useState('');
@@ -1155,7 +1189,8 @@ function Library({open,openKy,doing}){
     (!flt.includes('nhanh') || p.hours<=1) &&
     (!flt.includes('re')    || projCost(p)<=100000) &&
     (!flt.includes('de')    || p.diff===1) &&
-    (!flt.includes('cc')    || !p.flags || p.flags.chungcu!==false);
+    (!flt.includes('cc')    || !p.flags || p.flags.chungcu!==false) &&
+    (!flt.includes('dc')    || !thieuDC(p,kho).length);
   const SORTS = {mac:()=>0, de:(a,b)=>a.diff-b.diff||a.hours-b.hours,
                  re:(a,b)=>projCost(a)-projCost(b), nhanh:(a,b)=>a.hours-b.hours};
   const list = PROJECTS.filter(p =>
@@ -1187,7 +1222,8 @@ function Library({open,openKy,doing}){
         </div>
         {mode==='du' && <>
           <div className="fltrow">
-            {[['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']].map(([k,l])=>
+            {[['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']]
+              .concat(kho && kho.length ? [['dc','đủ dụng cụ tôi có']] : []).map(([k,l])=>
               <button key={k} className={'fchip'+(flt.includes(k)?' on':'')} onClick={()=>tog(k)}>{l}</button>)}
             <select className="fsel" value={sort} onChange={e=>setSort(e.target.value)}>
               <option value="mac">Thứ tự mặc định</option>
@@ -1197,7 +1233,7 @@ function Library({open,openKy,doing}){
             </select>
           </div>
           <p className="tiny" style={{margin:'10px 2px 0'}}>{list.length} dự án</p>
-          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} onClick={()=>open(p.id)}/>)}
+          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} onClick={()=>open(p.id)}/>)}
           {!list.length && <div className="empty">Không có dự án nào khớp.<br/>Bỏ bớt một bộ lọc thử xem.</div>}
         </>}
         {mode==='ky' && <>
@@ -1318,8 +1354,9 @@ function SkillView({id,close,open}){
 }
 
 /* ---------------------------------------------------------------- chi tiet du an */
-function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy,lamNgay,clearLam}){
+function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy,lamNgay,clearLam,kho}){
   const p = byId(id);
+  const thieu = thieuDC(p,kho);
   const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
   const [focus,setFocus] = useState(!!lamNgay);
   useEffect(()=>{ if(lamNgay){ setSeg('bw'); clearLam && clearLam(); } },[]);
@@ -1360,6 +1397,14 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
           <div className="card">
             <h3>Dụng cụ cần có</h3>
             {p.tools.map((t,i)=><p key={i} className="muted" style={{marginTop:6}}>· {t}</p>)}
+            {!!thieu.length && <div className="row" style={{marginTop:11,alignItems:'flex-start',
+              padding:'9px 11px',background:'var(--card2)',borderRadius:11,border:'1px solid var(--line)'}}>
+              <span style={{color:'var(--warn)',fontSize:15}}>!</span>
+              <div style={{flex:1}}>
+                <b style={{fontSize:13}}>Kho nhà thiếu {thieu.length} món</b>
+                <p className="tiny" style={{marginTop:2}}>{thieu.map(t=>dcById(t).ten).join(' · ')}</p>
+              </div>
+            </div>}
             {p.skills && !!p.skills.length && <>
               <p className="tiny" style={{marginTop:12,marginBottom:6}}>Kỹ năng dùng tới</p>
               <div className="meta">{p.skills.map(s=>{ const k=kyById(s); return k?
@@ -1750,7 +1795,9 @@ function Gallery({gal,setGal,doing}){
 }
 
 /* ---------------------------------------------------------------- toi */
-function Me({body,setBody,doing,gal,shop,light,setLight,dims}){
+function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
+  const togDC = id => setKho(kho.includes(id) ? kho.filter(x=>x!==id) : kho.concat(id));
+  const thieuTien = DUNGCU.filter(d=>d.nen && !kho.includes(d.id)).reduce((s,d)=>s+d.p,0);
   const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
   const started = Object.keys(doing).length;
   const finished = Object.keys(doing).filter(id=>{ const p=byId(id); if(!p) return false;
@@ -1767,6 +1814,26 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims}){
           <div className="kpi"><b>{finished}</b><span>dự án làm xong</span></div>
           <div className="kpi"><b>{gal.length}</b><span>thành phẩm đã lưu</span></div>
           <div className="kpi"><b style={{fontSize:16}}>{vndFull(spent)}</b><span>vật liệu đã mua</span></div>
+        </div>
+        <div className="card">
+          <div className="between"><h3>Kho dụng cụ nhà mình</h3>
+            <span className="tiny">{kho.length}/{DUNGCU.length}</span></div>
+          <p className="tiny" style={{marginTop:3}}>Tick những món đã có. App sẽ báo dự án nào còn thiếu dụng cụ, và lọc ra những dự án làm được ngay.</p>
+          {DUNGCU.map(d=>{ const co=kho.includes(d.id);
+            return (
+              <div className="mat" key={d.id}>
+                <div className={'tick'+(co?' on':'')} onClick={()=>togDC(d.id)}>{co&&<Ico d={ICONS.check}/>}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="between">
+                    <b style={{fontSize:13.5,opacity:co?.55:1}}>{d.ten}</b>
+                    <span className="tiny" style={{whiteSpace:'nowrap'}}>{co?'đã có':'~'+vnd(d.p)}</span>
+                  </div>
+                  {!!d.nen && !co && <p className="tiny" style={{marginTop:2,color:'var(--warn)'}}>nên có — dùng ở rất nhiều dự án</p>}
+                </div>
+              </div>);
+          })}
+          {thieuTien>0 && <p className="tiny" style={{marginTop:11,paddingTop:11,borderTop:'1px solid var(--line)'}}>
+            Sắm đủ bộ nên có còn thiếu khoảng <b style={{color:'var(--acc)'}}>{vndFull(thieuTien)}</b>.</p>}
         </div>
         <div className="card">
           <h3>Số đo đầu</h3>
