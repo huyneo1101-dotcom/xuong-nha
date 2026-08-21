@@ -1193,7 +1193,7 @@ function Thumb({p}){
 
 const thieuDC = (p,kho) => dcOf(p).filter(id=>!(kho||[]).includes(id));
 
-function PCard({p,onClick,prog,kho}){
+function PCard({p,onClick,prog,kho,viSao}){
   const thieu = kho ? thieuDC(p,kho) : [];
   return (
     <div className="card pcard" onClick={onClick}>
@@ -1212,6 +1212,7 @@ function PCard({p,onClick,prog,kho}){
             ? <span className="chip warn">thiếu {thieu.length} dụng cụ</span>
             : <span className="chip ok">đủ dụng cụ</span>)}
         </div>
+        {viSao && <p className="tiny" style={{marginTop:6,color:'var(--acc)'}}>khớp {viSao}</p>}
         {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
       </div>
     </div>
@@ -1239,6 +1240,33 @@ function Library({open,openKy,doing,kho}){
     .slice().sort(SORTS[sort]);
   const kyList = KYNANG.filter(k =>
     !q || (k.ten+' '+k.tomtat+' '+k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
+
+  /* chỉ mục vật liệu: gom theo tên, đếm số dự án dùng tới */
+  const vlIndex = useMemo(()=>{
+    const m = {};
+    PROJECTS.forEach(p=> p.mats.forEach(x=>{
+      const k = x.n.trim();
+      if(!m[k]) m[k] = {n:k, mua:x.mua||'cho', p:x.p, du:[]};
+      if(!m[k].du.includes(p.id)) m[k].du.push(p.id);
+    }));
+    return Object.values(m).sort((a,b)=> b.du.length-a.du.length || a.n.localeCompare(b.n,'vi'));
+  },[]);
+  const vlList = vlIndex.filter(v => !q || v.n.toLowerCase().includes(q.toLowerCase()));
+  const vlNhom = {};
+  vlList.forEach(v=> (vlNhom[v.mua]=vlNhom[v.mua]||[]).push(v));
+
+  /* vì sao dự án này khớp với từ đang tìm */
+  const viSao = p => {
+    if(!q) return null;
+    const s = q.toLowerCase();
+    if(p.name.toLowerCase().includes(s)) return null;
+    const m = p.mats.find(x=>x.n.toLowerCase().includes(s));
+    if(m) return 'vật liệu: '+m.n;
+    const t = p.tools.find(x=>x.toLowerCase().includes(s));
+    if(t) return 'dụng cụ: '+t;
+    if(p.cat.toLowerCase().includes(s)) return 'nhóm '+p.cat;
+    return null;
+  };
   const prog = p => { const d=doing[p.id]; if(!d) return null;
     return Math.round(Object.values(d.steps||{}).filter(s=>s.done).length / p.steps.length * 100); };
   return (
@@ -1246,10 +1274,12 @@ function Library({open,openKy,doing,kho}){
       <div className="hd">
         <h1>Xưởng Nhà</h1>
         <p>{mode==='du' ? PROJECTS.length+' dự án tự làm · vật liệu mua được ở Việt Nam'
-                        : KYNANG.length+' kỹ năng nền — đọc trước khi bắt tay vào làm'}</p>
+          : mode==='ky' ? KYNANG.length+' kỹ năng nền — đọc trước khi bắt tay vào làm'
+                        : 'Còn thừa thứ gì trong nhà? Tìm xem làm được món nào'}</p>
         <div className="seg2">
           <button className={mode==='du'?'on':''} onClick={()=>setMode('du')}>Dự án</button>
           <button className={mode==='ky'?'on':''} onClick={()=>setMode('ky')}>Kỹ năng</button>
+          <button className={mode==='vl'?'on':''} onClick={()=>setMode('vl')}>Vật liệu</button>
         </div>
         {mode==='du' && <div className="seg">
           <button className={cat==='all'?'on':''} onClick={()=>setCat('all')}>Tất cả</button>
@@ -1258,7 +1288,8 @@ function Library({open,openKy,doing,kho}){
       </div>
       <div className="wrap">
         <div style={{marginTop:12}}>
-          <input placeholder={mode==='du'?'Tìm dự án…':'Tìm kỹ năng…'} value={q} onChange={e=>setQ(e.target.value)}/>
+          <input value={q} onChange={e=>setQ(e.target.value)}
+            placeholder={mode==='du'?'Tìm dự án, vật liệu, dụng cụ…':mode==='ky'?'Tìm kỹ năng…':'Tìm vật liệu…'}/>
         </div>
         {mode==='du' && <>
           <div className="fltrow">
@@ -1273,7 +1304,7 @@ function Library({open,openKy,doing,kho}){
             </select>
           </div>
           <p className="tiny" style={{margin:'10px 2px 0'}}>{list.length} dự án</p>
-          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} onClick={()=>open(p.id)}/>)}
+          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} viSao={viSao(p)} onClick={()=>open(p.id)}/>)}
           {!list.length && <div className="empty">Không có dự án nào khớp.<br/>Bỏ bớt một bộ lọc thử xem.</div>}
         </>}
         {mode==='ky' && <>
@@ -1290,6 +1321,27 @@ function Library({open,openKy,doing,kho}){
               </div>
             </div>))}
           {!kyList.length && <div className="empty">Không có kỹ năng nào khớp.</div>}
+        </>}
+        {mode==='vl' && <>
+          <p className="tiny" style={{margin:'10px 2px 0'}}>{vlList.length} loại vật liệu · chạm để xem dự án dùng tới</p>
+          {Object.keys(vlNhom).map(g=>(
+            <div className="card" key={g}>
+              <b style={{fontSize:14.5}}>{MUA[g]||g}</b>
+              {vlNhom[g].map(v=>(
+                <div className="mat" key={v.n} style={{cursor:'pointer'}}
+                     onClick={()=>{ setQ(v.n); setMode('du'); }}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="between">
+                      <b style={{fontSize:13.5}}>{v.n}</b>
+                      <span className="tiny" style={{whiteSpace:'nowrap'}}>{v.p?vnd(v.p):'có sẵn'}</span>
+                    </div>
+                    <p className="tiny" style={{marginTop:2}}>
+                      {v.du.length>1 ? v.du.length+' dự án dùng tới' : byId(v.du[0]).name}</p>
+                  </div>
+                  <span style={{color:'var(--acc)',fontSize:17,alignSelf:'center'}}>›</span>
+                </div>))}
+            </div>))}
+          {!vlList.length && <div className="empty">Không có vật liệu nào khớp.</div>}
         </>}
       </div>
     </div>
