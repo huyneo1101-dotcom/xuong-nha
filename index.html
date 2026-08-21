@@ -124,7 +124,17 @@ label.fl{display:block;font-size:12px;color:var(--tx3);margin:0 0 5px 2px}
 .warnbox h4{color:var(--bad);font-size:13.5px;font-weight:600;margin-bottom:3px}
 .warnbox p{font-size:12.5px;color:var(--tx2);line-height:1.5}
 .gal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
-.gal figure{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.gal figure{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  position:relative;cursor:pointer}
+.badge{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.62);color:#fff;font-size:10.5px;
+  padding:3px 8px;border-radius:99px;letter-spacing:.02em}
+.slot{position:relative;background:var(--card2);border:1px dashed var(--line);border-radius:12px;
+  overflow:hidden;min-height:104px;display:flex}
+.slot img{width:100%;height:104px;object-fit:cover;display:block}
+.pick{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;color:var(--tx3);font:600 12px "Segoe UI",sans-serif;letter-spacing:.06em}
+.xbtn{position:absolute;top:5px;right:5px;background:rgba(0,0,0,.6);color:#fff;border:none;
+  width:24px;height:24px;border-radius:99px;cursor:pointer;font-size:13px;line-height:1}
 .gal img{width:100%;height:118px;object-fit:cover;display:block}
 .gal figcaption{padding:9px 10px;font-size:12px;color:var(--tx2)}
 .empty{text-align:center;color:var(--tx3);font-size:13.5px;padding:36px 20px;line-height:1.6}
@@ -1734,66 +1744,133 @@ function shrink(file,cb){
   r.readAsDataURL(file);
 }
 
-function Gallery({gal,setGal,doing}){
-  const [add,setAdd] = useState(false);
-  const [draft,setDraft] = useState({projId:'', note:'', img:null, stars:4});
-  const fileRef = useRef(null);
-  const save = ()=>{
-    if(!draft.projId){ alert('Chọn dự án đã.'); return; }
-    setGal([{...draft, id:'g'+Date.now(), date:today()}, ...gal]);
-    setDraft({projId:'',note:'',img:null,stars:4}); setAdd(false);
-  };
-  const del = id => { if(confirm('Xoá mục này?')) setGal(gal.filter(g=>g.id!==id)); };
+function AnhO({label,url,onPick,onClear}){
   return (
-    <div>
-      <div className="hd"><h1>Thành phẩm</h1><p>{gal.length} lần làm đã ghi lại</p></div>
-      <div className="wrap">
-        {!add && <button className="btn" style={{marginTop:12}} onClick={()=>setAdd(true)}>+ Ghi lại một thành phẩm</button>}
-        {add && <div className="card">
-          <label className="fl">Dự án</label>
-          <select value={draft.projId} onChange={e=>setDraft({...draft,projId:e.target.value})}>
-            <option value="">— chọn dự án —</option>
-            {PROJECTS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <label className="fl" style={{marginTop:11}}>Ảnh</label>
-          <input ref={fileRef} type="file" accept="image/*" style={{padding:8}}
-            onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(f) shrink(f,url=>setDraft(d=>({...d,img:url}))); }}/>
-          {draft.img && <img src={draft.img} style={{width:'100%',borderRadius:12,marginTop:10}}/>}
-          <label className="fl" style={{marginTop:11}}>Làm xong thấy sao?</label>
-          <textarea placeholder="Chỗ nào khó, lần sau sửa gì…" value={draft.note}
-            onChange={e=>setDraft({...draft,note:e.target.value})}/>
-          <div className="row" style={{marginTop:10}}>
-            <span className="tiny">Hài lòng:</span>
-            {[1,2,3,4,5].map(n=>
-              <span key={n} onClick={()=>setDraft({...draft,stars:n})}
-                style={{cursor:'pointer',fontSize:19,color:n<=draft.stars?'var(--warn)':'var(--line)'}}>★</span>)}
-          </div>
-          <div className="row" style={{marginTop:12}}>
-            <button className="btn" onClick={save}>Lưu</button>
-            <button className="btn ghost" onClick={()=>setAdd(false)}>Huỷ</button>
-          </div>
-        </div>}
-        {!gal.length && !add && <div className="empty">Chưa có thành phẩm nào.<br/>Làm xong một món thì chụp lại, lần sau làm sẽ nhanh hơn.</div>}
-        <div className="gal">
-          {gal.map(g=>{ const p=byId(g.projId);
-            return (
-              <figure key={g.id} onClick={()=>del(g.id)}>
-                {g.img ? <img src={g.img}/> :
-                  <div style={{height:118,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>không có ảnh</div>}
-                <figcaption>
-                  <b style={{color:'var(--tx)',fontSize:12.5,display:'block'}}>{p?p.name:'(dự án đã xoá)'}</b>
-                  <span className="tiny">{dateVN(g.date)}<span className="dot"/>{'★'.repeat(g.stars||0)}</span>
-                  {g.note && <p style={{marginTop:4,fontSize:11.5,color:'var(--tx2)'}}>{g.note}</p>}
-                </figcaption>
-              </figure>);
-          })}
-        </div>
-        {!!gal.length && <p className="tiny" style={{marginTop:10,textAlign:'center'}}>Bấm vào một ô để xoá.</p>}
-      </div>
+    <div className="slot">
+      {url
+        ? <><img src={url}/><button className="xbtn" onClick={onClear}>✕</button></>
+        : <label className="pick">
+            <span>{label}</span><span className="tiny">chạm để chọn ảnh</span>
+            <input type="file" accept="image/*" style={{display:'none'}}
+              onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(f) shrink(f,u=>u&&onPick(u)); }}/>
+          </label>}
     </div>
   );
 }
 
+function Gallery({gal,setGal,doing,open}){
+  const [add,setAdd] = useState(false);
+  const [xem,setXem] = useState(null);
+  const [loc,setLoc] = useState('all');
+  const rong = {projId:'', note:'', truoc:null, sau:null, stars:4, gio:''};
+  const [draft,setDraft] = useState(rong);
+
+  const save = ()=>{
+    if(!draft.projId){ alert('Chọn dự án đã.'); return; }
+    if(!draft.sau && !draft.truoc){ alert('Thêm ít nhất một tấm ảnh.'); return; }
+    setGal([{...draft, id:'g'+Date.now(), date:today()}, ...gal]);
+    setDraft(rong); setAdd(false);
+  };
+  const del = id => { if(confirm('Xoá mục này?')){ setGal(gal.filter(g=>g.id!==id)); setXem(null); } };
+
+  const duAn = [...new Set(gal.map(g=>g.projId))].map(byId).filter(Boolean);
+  const list = gal.filter(g=> loc==='all' || g.projId===loc);
+  const g0 = xem ? gal.find(g=>g.id===xem) : null;
+
+  return (
+    <div>
+      <div className="hd">
+        <h1>Thành phẩm</h1>
+        <p>{gal.length ? gal.length+' lần làm đã ghi lại' : 'Chưa có gì — làm xong món đầu tiên thì chụp lại'}</p>
+        {duAn.length>1 && <div className="seg">
+          <button className={loc==='all'?'on':''} onClick={()=>setLoc('all')}>Tất cả</button>
+          {duAn.map(p=><button key={p.id} className={loc===p.id?'on':''} onClick={()=>setLoc(p.id)}>{p.name.split(' ').slice(0,3).join(' ')}</button>)}
+        </div>}
+      </div>
+      <div className="wrap">
+        {!add && <button className="btn" style={{marginTop:12}} onClick={()=>setAdd(true)}>+ Ghi lại một thành phẩm</button>}
+
+        {add && <div className="card">
+          <label className="fl">Dự án</label>
+          <select value={draft.projId} onChange={e=>setDraft({...draft,projId:e.target.value})}>
+            <option value="">— chọn dự án —</option>
+            <optgroup label="Đang làm / đã làm">
+              {Object.keys(doing).map(byId).filter(Boolean).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </optgroup>
+            <optgroup label="Tất cả">
+              {PROJECTS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </optgroup>
+          </select>
+
+          <div className="grid2" style={{marginTop:12}}>
+            <AnhO label="TRƯỚC" url={draft.truoc}
+              onPick={u=>setDraft(d=>({...d,truoc:u}))} onClear={()=>setDraft(d=>({...d,truoc:null}))}/>
+            <AnhO label="SAU" url={draft.sau}
+              onPick={u=>setDraft(d=>({...d,sau:u}))} onClear={()=>setDraft(d=>({...d,sau:null}))}/>
+          </div>
+
+          <label className="fl" style={{marginTop:12}}>Làm hết bao lâu (giờ)</label>
+          <input inputMode="decimal" placeholder="ví dụ 2,5" value={draft.gio}
+            onChange={e=>setDraft({...draft,gio:e.target.value})}/>
+
+          <label className="fl" style={{marginTop:12}}>Làm xong thấy sao?</label>
+          <textarea placeholder="Chỗ nào khó, lần sau sửa gì, mua thiếu thứ gì…" value={draft.note}
+            onChange={e=>setDraft({...draft,note:e.target.value})}/>
+
+          <div className="row" style={{marginTop:10}}>
+            <span className="tiny">Hài lòng:</span>
+            {[1,2,3,4,5].map(n=>
+              <span key={n} onClick={()=>setDraft({...draft,stars:n})}
+                style={{cursor:'pointer',fontSize:21,color:n<=draft.stars?'var(--warn)':'var(--line)'}}>★</span>)}
+          </div>
+          <div className="row" style={{marginTop:12}}>
+            <button className="btn" onClick={save}>Lưu</button>
+            <button className="btn ghost" onClick={()=>{setAdd(false); setDraft(rong);}}>Huỷ</button>
+          </div>
+        </div>}
+
+        {!list.length && !add && <div className="empty">
+          Chưa có thành phẩm nào.<br/>Làm xong một món thì chụp lại — lần sau làm sẽ nhanh hơn.</div>}
+
+        <div className="gal">
+          {list.map(g=>{ const p=byId(g.projId); const anh=g.sau||g.truoc||g.img;
+            return (
+              <figure key={g.id} onClick={()=>setXem(g.id)}>
+                {anh ? <img src={anh}/> :
+                  <div style={{height:118,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>không có ảnh</div>}
+                {g.truoc && g.sau && <span className="badge">trước / sau</span>}
+                <figcaption>
+                  <b style={{color:'var(--tx)',fontSize:12.5,display:'block'}}>{p?p.name:'(dự án đã xoá)'}</b>
+                  <span className="tiny">{dateVN(g.date)}<span className="dot"/>{'★'.repeat(g.stars||0)}</span>
+                </figcaption>
+              </figure>);
+          })}
+        </div>
+      </div>
+
+      {g0 && <div className="sheet" style={{zIndex:60}}>
+        <div className="shd">
+          <button className="back" onClick={()=>setXem(null)}>‹ Đóng</button>
+          <h1 style={{fontSize:17,fontWeight:600}}>{(byId(g0.projId)||{}).name||'Thành phẩm'}</h1>
+          <p className="tiny" style={{marginTop:3}}>{dateVN(g0.date)}
+            {g0.gio? ' · làm hết '+g0.gio+' giờ':''} · {'★'.repeat(g0.stars||0)}</p>
+        </div>
+        <div className="wrap">
+          {g0.truoc && <div className="card"><p className="tiny" style={{marginBottom:7}}>TRƯỚC</p>
+            <img src={g0.truoc} style={{width:'100%',borderRadius:11,display:'block'}}/></div>}
+          {(g0.sau||g0.img) && <div className="card"><p className="tiny" style={{marginBottom:7}}>SAU</p>
+            <img src={g0.sau||g0.img} style={{width:'100%',borderRadius:11,display:'block'}}/></div>}
+          {g0.note && <div className="card"><h3>Ghi lại</h3>
+            <p className="muted" style={{marginTop:6,whiteSpace:'pre-wrap'}}>{g0.note}</p></div>}
+          {byId(g0.projId) && <button className="btn ghost" style={{marginTop:12}}
+            onClick={()=>{ setXem(null); open(g0.projId); }}>Mở lại dự án này</button>}
+          <button className="btn ghost" style={{marginTop:10,color:'var(--bad)',borderColor:'var(--bad)'}}
+            onClick={()=>del(g0.id)}>Xoá mục này</button>
+        </div>
+      </div>}
+    </div>
+  );
+}
 /* ---------------------------------------------------------------- toi */
 function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
   const togDC = id => setKho(kho.includes(id) ? kho.filter(x=>x!==id) : kho.concat(id));
