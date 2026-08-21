@@ -55,6 +55,21 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
 .seg2 button{flex:1;background:none;border:none;color:var(--tx2);font:inherit;font-size:13.5px;
   font-weight:600;padding:7px 0;border-radius:9px;cursor:pointer}
 .seg2 button.on{background:var(--acc);color:var(--on-acc)}
+.focus{position:fixed;inset:0;z-index:70;background:var(--bg);max-width:640px;margin:0 auto;
+  display:flex;flex-direction:column}
+.fhd{padding:12px 16px 10px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.dots{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.dt{width:100%;flex:1;min-width:8px;height:6px;border-radius:99px;background:var(--card2);
+  border:1px solid var(--line);cursor:pointer}
+.dt.ok{background:var(--acc2);border-color:var(--acc2)}
+.dt.cur{background:var(--acc);border-color:var(--acc);height:8px;margin-top:-1px}
+.fbody{flex:1;overflow-y:auto;padding:18px 16px 20px;-webkit-overflow-scrolling:touch}
+.ftitle{font-size:24px;font-weight:600;line-height:1.25;margin-top:6px;letter-spacing:-.3px}
+.fdesc{font-size:16.5px;line-height:1.62;color:var(--tx2);margin-top:12px}
+.fnav{flex:0 0 auto;display:flex;gap:8px;padding:11px 16px calc(11px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line);background:var(--bg2)}
+.fnav .btn{padding:13px 10px}
+.fnav .btn:disabled{opacity:.32}
 .fltrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;align-items:center}
 .fchip{background:var(--card);border:1px solid var(--line);color:var(--tx2);font:inherit;font-size:12.5px;
   padding:6px 12px;border-radius:999px;cursor:pointer}
@@ -1199,6 +1214,59 @@ function Library({open,openKy,doing}){
   );
 }
 
+/* ---------------------------------------------------------------- che do lam */
+function FocusMode({id,close,doing,setDoing,dims}){
+  const p = byId(id);
+  const d = doing[id] || {steps:{}};
+  const first = (()=>{ for(let i=0;i<p.steps.length;i++) if(!(d.steps&&d.steps[i]&&d.steps[i].done)) return i;
+                       return p.steps.length-1; })();
+  const [i,setI] = useState(first);
+  const [t0] = useState(()=>Date.now());
+  const [now,setNow] = useState(()=>Date.now());
+  useEffect(()=>{ const h=setInterval(()=>setNow(Date.now()),1000); return ()=>clearInterval(h); },[]);
+  const phut = Math.floor((now-t0)/60000), giay = Math.floor((now-t0)/1000)%60;
+  const st = (d.steps&&d.steps[i]) || {done:false,note:''};
+  const setStep = patch => { const steps={...(d.steps||{})}; steps[i]={...st,...patch};
+    setDoing({...doing,[id]:{...d,steps}}); };
+  const done = Object.values(d.steps||{}).filter(s=>s.done).length;
+  const xong = done===p.steps.length;
+  const s = p.steps[i];
+  return (
+    <div className="focus">
+      <div className="fhd">
+        <button className="back" onClick={close}>‹ Thoát chế độ làm</button>
+        <div className="between" style={{marginTop:2}}>
+          <b style={{fontSize:14}}>{p.name}</b>
+          <span className="tiny" style={{whiteSpace:'nowrap'}}>⏱ {phut}:{String(giay).padStart(2,'0')}</span>
+        </div>
+        <div className="bar" style={{marginTop:8}}><i style={{width:(done/p.steps.length*100)+'%'}}/></div>
+        <div className="dots">{p.steps.map((_,k)=>
+          <span key={k} className={'dt'+(k===i?' cur':'')+((d.steps&&d.steps[k]&&d.steps[k].done)?' ok':'')}
+                onClick={()=>setI(k)}/>)}</div>
+      </div>
+      <div className="fbody">
+        <div className="sn">BƯỚC {String(i+1).padStart(2,'0')} / {p.steps.length}</div>
+        <h2 className="ftitle">{s.t}</h2>
+        <p className="fdesc">{s.d}</p>
+        {s.fig && FIG[s.fig] && <div className="fig" dangerouslySetInnerHTML={{__html:FIG[s.fig](dims)}}/>}
+        <textarea style={{marginTop:14}} placeholder="Ghi lại chỗ vướng, số đo thật, thứ phải mua thêm…"
+          value={st.note} onChange={e=>setStep({note:e.target.value})}/>
+        {xong && <div className="card" style={{marginTop:14,borderColor:'var(--acc)'}}>
+          <h3 style={{color:'var(--acc)'}}>Xong cả {p.steps.length} bước</h3>
+          <p className="muted" style={{marginTop:4}}>Chụp lại thành phẩm ở tab Thành phẩm trong khi còn nhớ chỗ nào khó.</p>
+        </div>}
+      </div>
+      <div className="fnav">
+        <button className="btn ghost" disabled={i===0} onClick={()=>setI(i-1)} style={{flex:'0 0 88px'}}>‹ Trước</button>
+        {st.done
+          ? <button className="btn ghost" onClick={()=>{ setStep({done:false}); }}>Bỏ đánh dấu</button>
+          : <button className="btn" onClick={()=>{ setStep({done:true}); if(i<p.steps.length-1) setTimeout(()=>setI(i+1),160); }}>Xong bước này ✓</button>}
+        <button className="btn ghost" disabled={i===p.steps.length-1} onClick={()=>setI(i+1)} style={{flex:'0 0 78px'}}>Sau ›</button>
+      </div>
+    </div>
+  );
+}
+
 /* ---------------------------------------------------------------- doc ky nang */
 function SkillView({id,close,open}){
   const k = kyById(id);
@@ -1247,6 +1315,7 @@ function SkillView({id,close,open}){
 function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy}){
   const p = byId(id);
   const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
+  const [focus,setFocus] = useState(false);
   const d = doing[id];
   const stepState = (i)=> (d && d.steps && d.steps[i]) || {done:false,note:''};
   const setStep = (i,patch)=>{
@@ -1304,7 +1373,10 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
 
         {seg==='vl' && <MatList p={p} shop={shop} setShop={setShop}/>}
 
-        {seg==='bw' && <div className="card">
+        {seg==='bw' && <>
+        {d && <button className="btn" style={{marginTop:12}} onClick={()=>setFocus(true)}>
+          ▶ Vào chế độ làm — từng bước một</button>}
+        <div className="card">
           {!d && <p className="tiny" style={{marginBottom:10}}>Bấm “Bắt đầu làm” ở tab Tổng quan để tick được từng bước.</p>}
           {p.steps.map((s,i)=>{
             const st = stepState(i);
@@ -1324,10 +1396,11 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
                 </div>
               </div>);
           })}
-        </div>}
+        </div></>}
 
         {seg==='bv' && <DomeDraw dims={dims} body={body} setBody={setBody}/>}
       </div>
+      {focus && <FocusMode id={id} close={()=>setFocus(false)} doing={doing} setDoing={setDoing} dims={dims}/>}
     </div>
   );
 }
