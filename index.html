@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Xưởng Nhà — góc tự làm</title>
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js"></script>
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#0e141b; --card:#111820; --card2:#16202b; --line:#23303d;
+  --tx:#e8edf2; --tx2:#93a4b3; --tx3:#61748a;
+  --acc:#37d6c4; --acc2:#1e9a8d; --warn:#ffb545; --bad:#ff7b7b; --vio:#8b6cff;
+  --on-acc:#06211e; --shadow:0 6px 24px rgba(0,0,0,.35);
+}
+body.light{
+  --bg:#f4f6f8; --bg2:#eceff3; --card:#ffffff; --card2:#f7f9fb; --line:#dde3ea;
+  --tx:#16202b; --tx2:#5b6b7b; --tx3:#8b9aa8;
+  --acc:#0f9e90; --acc2:#0b7c71; --warn:#c9791a; --bad:#d8483f; --vio:#6b4fd8;
+  --on-acc:#ffffff; --shadow:0 6px 20px rgba(20,40,60,.10);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:15px;line-height:1.5;overscroll-behavior-y:none}
+#root{max-width:640px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+.wrap{padding:0 16px 96px}
+.hd{position:sticky;top:0;z-index:20;background:var(--bg);padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.hd h1{font-size:20px;font-weight:600;letter-spacing:-.2px}
+.hd p{font-size:12.5px;color:var(--tx3);margin-top:2px}
+.seg{display:flex;gap:6px;margin-top:11px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--tx2);
+  padding:6px 13px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--acc);border-color:var(--acc);color:var(--on-acc);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-top:12px}
+.card h3{font-size:15.5px;font-weight:600}
+.muted{color:var(--tx2);font-size:13px}
+.tiny{color:var(--tx3);font-size:12px}
+.row{display:flex;gap:10px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn{background:var(--acc);color:var(--on-acc);border:none;border-radius:12px;padding:11px 16px;
+  font:inherit;font-weight:600;font-size:14px;cursor:pointer;width:100%}
+.btn.ghost{background:transparent;color:var(--tx2);border:1px solid var(--line)}
+.btn.sm{width:auto;padding:7px 12px;font-size:13px;border-radius:10px}
+.btn:active{transform:scale(.99)}
+.chip{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:999px;
+  background:var(--card2);border:1px solid var(--line);color:var(--tx2)}
+.chip.acc{color:var(--acc);border-color:var(--acc2)}
+.chip.warn{color:var(--warn);border-color:#6b4c17}
+body.light .chip.warn{border-color:#e2c48f}
+.pcard{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.thumb{flex:0 0 74px;height:74px;border-radius:13px;background:var(--card2);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.thumb svg{width:100%;height:100%}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.bar{height:5px;background:var(--card2);border-radius:99px;overflow:hidden;margin-top:9px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:99px}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--bg2);border-top:1px solid var(--line);
+  display:flex;max-width:640px;margin:0 auto;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:none;color:var(--tx3);font:inherit;font-size:10.5px;
+  padding:9px 2px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button.on{color:var(--acc)}
+nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.sheet{position:fixed;inset:0;z-index:50;background:var(--bg);max-width:640px;margin:0 auto;
+  overflow-y:auto;-webkit-overflow-scrolling:touch}
+.shd{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 16px}
+.back{background:none;border:none;color:var(--acc);font:inherit;font-size:14px;cursor:pointer;padding:0;margin-bottom:6px}
+.step{display:flex;gap:11px;padding:13px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:none}
+.tick{flex:0 0 26px;height:26px;border-radius:9px;border:1.6px solid var(--line);background:var(--card2);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.tick.on{background:var(--acc);border-color:var(--acc)}
+.tick svg{width:15px;height:15px;stroke:var(--on-acc);fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.sn{font:600 12px/1 Consolas,monospace;color:var(--acc);letter-spacing:.06em}
+.fig{margin:10px 0 2px;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:6px}
+.fig svg{display:block;width:100%;height:auto}
+.mat{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.mat:last-child{border-bottom:none}
+input,textarea,select{background:var(--card2);border:1px solid var(--line);color:var(--tx);
+  border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;width:100%}
+textarea{resize:vertical;min-height:60px}
+input:focus,textarea:focus{outline:none;border-color:var(--acc)}
+label.fl{display:block;font-size:12px;color:var(--tx3);margin:0 0 5px 2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--card2);border:1px solid var(--line);border-radius:13px;padding:11px 12px}
+.kpi b{display:block;font-size:20px;font-weight:600;color:var(--acc);font-variant-numeric:tabular-nums}
+.kpi span{font-size:11.5px;color:var(--tx3);display:block;margin-top:2px;line-height:1.35}
+.warnbox{background:rgba(255,123,123,.07);border:1px solid rgba(255,123,123,.28);border-radius:13px;padding:11px 13px;margin-top:10px}
+.warnbox h4{color:var(--bad);font-size:13.5px;font-weight:600;margin-bottom:3px}
+.warnbox p{font-size:12.5px;color:var(--tx2);line-height:1.5}
+.gal{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.gal figure{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.gal img{width:100%;height:118px;object-fit:cover;display:block}
+.gal figcaption{padding:9px 10px;font-size:12px;color:var(--tx2)}
+.empty{text-align:center;color:var(--tx3);font-size:13.5px;padding:36px 20px;line-height:1.6}
+.dot{width:5px;height:5px;border-radius:99px;background:var(--tx3);display:inline-block;vertical-align:middle;margin:0 6px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="boot" style="padding:40px 20px;font:15px system-ui;color:#93a4b3">Đang tải…</div>
+<script>
+  (function(){
+    setTimeout(function(){
+      var b=document.getElementById('boot'); if(!b) return;
+      var miss=[]; if(!window.React) miss.push('React'); if(!window.ReactDOM) miss.push('ReactDOM'); if(!window.Babel) miss.push('Babel');
+      if(miss.length) b.innerHTML='<b style="color:#ff7b7b">Không tải được thư viện: '+miss.join(', ')+'</b><br><br>Cần Internet lần đầu để lấy React/Babel từ jsDelivr.';
+      else if(document.getElementById('root').children.length===0) b.innerHTML='<b style="color:#ff7b7b">Ứng dụng không khởi động được.</b><br><br>Mở DevTools (F12) → Console để xem lỗi cú pháp.';
+    },2500);
+    try{ var t=localStorage.getItem('diy.theme'); if(t==='light') document.body.classList.add('light'); }catch(e){}
+  })();
+</script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useMemo,useRef} = React;
+
+/* ---------------------------------------------------------------- luu tru */
+const store = (()=>{ let ok=true, mem={};
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }catch(e){ ok=false; }
+  return {
+    get(k,d){ try{ const v = ok? localStorage.getItem(k) : mem[k]; return v? JSON.parse(v) : d; }catch(e){ return d; } },
+    set(k,v){ try{ const s=JSON.stringify(v); if(ok) localStorage.setItem(k,s); else mem[k]=s; }catch(e){} },
+    del(k){ try{ if(ok) localStorage.removeItem(k); else delete mem[k]; }catch(e){} }
+  };
+})();
+const K = {doing:'diy.doing', shop:'diy.shop', gal:'diy.gallery', body:'diy.body', theme:'diy.theme'};
+
+/* ---------------------------------------------------------------- tien ich */
+const vnd = n => n>=1000 ? (n/1000).toLocaleString('vi-VN',{maximumFractionDigits:0})+'k' : n+'đ';
+const vndFull = n => n.toLocaleString('vi-VN')+'đ';
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const dateVN = s => { const p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; };
+const DIFF = {1:'Dễ',2:'Vừa',3:'Khó'};
+const P = (cx,cy,r,deg)=>{ const a=deg*Math.PI/180; return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; };
+
+/* ---------------------------------------------------------------- hinh ve DOME-01 (SVG parametric) */
+const AR = '<marker id="ar" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">'+
+  '<path d="M0 3.5 L7 .6 L7 6.4 Z" fill="var(--warn)"/></marker>'+
+  '<marker id="ar2" markerWidth="6" markerHeight="6" refX="3" refY="5.2" orient="auto">'+
+  '<path d="M0 0 L3 6 L6 0 Z" fill="var(--warn)"/></marker>'+
+  '<pattern id="mesh" width="9" height="9" patternUnits="userSpaceOnUse">'+
+  '<rect width="9" height="9" fill="var(--card)"/>'+
+  '<circle cx="4.5" cy="4.5" r="2.6" fill="none" stroke="var(--acc)" stroke-width=".8" opacity=".55"/></pattern>'+
+  '<linearGradient id="gh" x1=".15" y1="0" x2=".85" y2="1">'+
+  '<stop offset="0" stop-color="#8d99a6"/><stop offset="1" stop-color="#5a6673"/></linearGradient>'+
+  '<linearGradient id="gs" x1=".1" y1="0" x2=".9" y2="1">'+
+  '<stop offset="0" stop-color="#46617f"/><stop offset="1" stop-color="#1b2836"/></linearGradient>';
+
+const svg = (vb,inner) => '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg"><defs>'+AR+'</defs>'+
+  '<style>text{font-family:"Segoe UI",system-ui,sans-serif}'+
+  '.d{font:600 11.5px Consolas,monospace;fill:var(--warn)}'+
+  '.dc{font:600 11.5px Consolas,monospace;fill:var(--acc)}'+
+  '.l{font:600 12px "Segoe UI",sans-serif;fill:var(--tx)}'+
+  '.r{font:11.5px "Segoe UI",sans-serif;fill:var(--tx2)}</style>'+inner+'</svg>';
+
+const aH = (x1,x2,y,t)=> '<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="var(--warn)" stroke-width="1.2" '+
+  'marker-start="url(#ar)" marker-end="url(#ar)"/><text x="'+((x1+x2)/2)+'" y="'+(y-6)+'" text-anchor="middle" class="d">'+t+'</text>';
+const aV = (y1,y2,x,t,anch,dx)=> '<line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'" stroke="var(--warn)" stroke-width="1.2" '+
+  'marker-start="url(#ar)" marker-end="url(#ar)"/><text x="'+(x+(dx||7))+'" y="'+((y1+y2)/2+4)+'" text-anchor="'+(anch||'start')+'" class="d">'+t+'</text>';
+const stit = pts => pts.map(p=>'<line x1="'+(p[0]-3.2)+'" y1="'+(p[1]-3.2)+'" x2="'+(p[0]+3.2)+'" y2="'+(p[1]+3.2)+
+  '" stroke="var(--bad)" stroke-width="1.9" stroke-linecap="round"/>').join('');
+
+const FIG = {
+  do(d){ const cx=148,cy=100,r=56;
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r)+' '+cy+' A'+r+' '+r+' 0 1 1 '+(cx+r)+' '+cy+' L'+(cx+r)+' '+(cy+20)+
+        ' Q'+cx+' '+(cy+28)+' '+(cx-r)+' '+(cy+20)+' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-10)+' '+(cy-2)+' A'+(r+20)+' '+(r+20)+' 0 1 1 '+(cx+r+10)+' '+(cy-2)+
+        '" fill="none" stroke="var(--acc)" stroke-width="2.6" stroke-dasharray="8 7" stroke-linecap="round"/>'+
+      '<path d="M'+(cx-r-6)+' '+(cy-6)+' Q'+cx+' '+(cy+9)+' '+(cx+r+6)+' '+(cy-6)+
+        '" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round"/>'+
+      '<circle cx="30" cy="34" r="9" fill="none" stroke="var(--acc)" stroke-width="1.6"/>'+
+      '<text x="30" y="38" text-anchor="middle" class="dc">2</text>'+
+      '<text x="45" y="38" class="dc">cung qua đỉnh · '+d.cung+' mm</text>'+
+      '<circle cx="30" cy="146" r="9" fill="none" stroke="var(--warn)" stroke-width="1.6"/>'+
+      '<text x="30" y="150" text-anchor="middle" class="d">1</text>'+
+      '<text x="45" y="150" class="d">chu vi vòng đầu · '+d.chuVi+' mm</text>');
+  },
+  duong(d){ const x1=30,x2=176;
+    return svg('0 0 296 160',
+      '<path d="M'+x1+' 42 L'+x2+' 50 L'+x2+' 72 L'+x1+' 80 Z" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.6"/>'+
+      aH(x1,x2,30,'L = '+d.nanL+' mm')+aV(42,80,20,'30','end',-7)+aV(50,72,188,'20')+
+      '<text x="'+((x1+x2)/2)+'" y="97" text-anchor="middle" class="l">NAN · 6 cái</text>'+
+      '<circle cx="248" cy="58" r="26" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.6"/>'+
+      aH(222,274,26,'Ø60')+
+      '<text x="248" y="97" text-anchor="middle" class="l">ĐĨA · 2 cái</text>'+
+      '<rect x="30" y="116" width="244" height="17" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>'<line x1="'+(50+k*41)+'" y1="116" x2="'+(50+k*41)+'" y2="133" stroke="var(--vio)" stroke-width="1.5" stroke-dasharray="3 3"/>').join('')+
+      aV(116,133,20,'25','end',-7)+
+      '<text x="152" y="148" text-anchor="middle" class="l">ĐAI · '+d.daiL+' mm</text>');
+  },
+  cat(){ return svg('0 0 296 160',
+      '<rect x="26" y="20" width="152" height="112" rx="4" fill="url(#mesh)" stroke="var(--line)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>{const y=24+k*18; return '<path d="M32 '+(y+2)+' L166 '+(y+5)+' L166 '+(y+12)+' L32 '+(y+15)+
+        '" fill="none" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="5 4"/>';}).join('')+
+      '<text x="102" y="148" text-anchor="middle" class="r">tấm lưới 3D · 30×30 cm</text>'+
+      '<g transform="translate(196 30) rotate(34)"><rect x="0" y="0" width="72" height="16" rx="3" fill="var(--card2)" stroke="var(--tx2)" stroke-width="1.2"/>'+
+      '<path d="M72 2 L95 8 L72 14 Z" fill="var(--tx2)"/><circle cx="17" cy="8" r="2.8" fill="var(--tx3)"/></g>'+
+      '<path d="M232 96 L232 122" stroke="var(--warn)" stroke-width="2.6" marker-end="url(#ar2)"/>'+
+      '<text x="232" y="140" text-anchor="middle" class="d">vuông góc</text>');
+  },
+  dinh(){ const cx=148,cy=70;
+    let s='';
+    for(let k=0;k<6;k++){ const a=k*60*Math.PI/180;
+      s+='<line x1="'+(cx+13*Math.cos(a)).toFixed(1)+'" y1="'+(cy+13*Math.sin(a)).toFixed(1)+
+         '" x2="'+(cx+62*Math.cos(a)).toFixed(1)+'" y2="'+(cy+62*Math.sin(a)).toFixed(1)+
+         '" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" opacity=".9"/>'; }
+    const dots=[]; for(let k=0;k<12;k++){ const a=k*30*Math.PI/180; dots.push([cx+22*Math.cos(a),cy+22*Math.sin(a)]); }
+    return svg('0 0 296 160', s+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="29" fill="var(--card2)" stroke="var(--acc)" stroke-width="2"/>'+stit(dots)+
+      '<path d="M'+(cx+74)+' '+cy+' A74 74 0 0 0 '+(cx+37)+' '+(cy+64)+'" fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 4"/>'+
+      '<text x="'+(cx+78)+'" y="'+(cy+46)+'" class="d">60°</text>'+
+      '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" class="l">ĐĨA</text>'+
+      '<text x="148" y="152" text-anchor="middle" class="r">khâu một vòng quanh mép đĩa</text>');
+  },
+  chan(d){ return svg('0 0 296 160',
+      '<rect x="26" y="94" width="256" height="21" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>'<line x1="'+(46+k*47)+'" y1="90" x2="'+(46+k*47)+'" y2="119" stroke="var(--vio)" stroke-width="1.5" stroke-dasharray="3 3"/>').join('')+
+      aH(140,187,82,d.spacing+' mm')+
+      '<path d="M36 94 L56 94 L51 28 L41 28 Z" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.5"/>'+
+      stit([[41,102],[46,108],[51,102],[46,98]])+
+      '<path d="M72 42 L72 88" stroke="var(--warn)" stroke-width="1.2" marker-end="url(#ar2)"/>'+
+      '<text x="80" y="54" class="d">dựng thẳng 90°</text>'+
+      '<text x="26" y="140" class="r">gập 10 mm chân nan, khâu ô chữ nhật</text>');
+  },
+  vong(){ return svg('0 0 296 160',
+      '<rect x="18" y="60" width="152" height="21" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      '<rect x="126" y="70" width="152" height="21" rx="3" fill="#4a6076" stroke="var(--vio)" stroke-width="1.4"/>'+
+      '<rect x="130" y="64" width="40" height="23" rx="2" fill="none" stroke="var(--bad)" stroke-width="1.9"/>'+
+      '<path d="M130 64 L170 87 M170 64 L130 87" stroke="var(--bad)" stroke-width="1.7"/>'+
+      aH(130,170,46,'chồng 30 mm')+
+      '<ellipse cx="148" cy="122" rx="52" ry="16" fill="none" stroke="var(--vio)" stroke-width="8"/>'+
+      '<rect x="140" y="106" width="16" height="9" rx="2" fill="var(--bad)" opacity=".85"/>'+
+      '<text x="212" y="118" class="r">vòng kín —</text><text x="212" y="134" class="r">đội thử trước</text>');
+  },
+  lap(){ const cx=148,cy=124,r=70; let dots='';
+    [154,122,90,58,26].forEach(k=>{ const a=k*Math.PI/180;
+      dots+='<circle cx="'+(cx+(r-8)*Math.cos(a)).toFixed(1)+'" cy="'+(cy-(r-8)*Math.sin(a)).toFixed(1)+'" r="6.5" fill="var(--vio)"/>'; });
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r-22)+' '+cy+' A'+(r+22)+' '+(r+22)+' 0 1 1 '+(cx+r+22)+' '+cy+' L'+(cx+r+16)+' '+cy+
+        ' A'+(r+16)+' '+(r+16)+' 0 1 0 '+(cx-r-16)+' '+cy+' Z" fill="url(#gs)" stroke="#0a1119" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-16)+' '+cy+' A'+(r+16)+' '+(r+16)+' 0 1 1 '+(cx+r+16)+' '+cy+' L'+(cx+r)+' '+cy+
+        ' A'+r+' '+r+' 0 1 0 '+(cx-r)+' '+cy+' Z" fill="#2b3d52" stroke="#0a1119" stroke-width="1"/>'+
+      '<path d="M'+(cx-r+8)+' '+cy+' A'+(r-8)+' '+(r-8)+' 0 1 1 '+(cx+r-8)+' '+cy+
+        '" fill="none" stroke="var(--acc)" stroke-width="8" stroke-linecap="round"/>'+dots+
+      '<path d="M'+cx+' 12 L'+cx+' 44" stroke="var(--warn)" stroke-width="3" marker-end="url(#ar2)"/>'+
+      '<text x="'+(cx+12)+'" y="30" class="d">ấn vào</text>'+
+      '<circle cx="30" cy="140" r="6.5" fill="var(--vio)"/>'+
+      '<text x="43" y="144" class="r">gai dính, dán lên lớp lót vải</text>');
+  },
+  thu(){ const cx=138,cy=128,r=54;
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r)+' '+cy+' A'+r+' '+r+' 0 1 1 '+(cx+r)+' '+cy+' L'+(cx+r)+' '+(cy+18)+
+        ' Q'+cx+' '+(cy+26)+' '+(cx-r)+' '+(cy+18)+' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-22)+' '+(cy-4)+' A'+(r+22)+' '+(r+22)+' 0 1 1 '+(cx+r+22)+' '+(cy-4)+' L'+(cx+r+8)+' '+(cy-4)+
+        ' A'+(r+8)+' '+(r+8)+' 0 1 0 '+(cx-r-8)+' '+(cy-4)+' Z" fill="url(#gs)" stroke="#0a1119" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-4)+' '+(cy-4)+' A'+(r+4)+' '+(r+4)+' 0 1 1 '+(cx+r+4)+' '+(cy-4)+
+        '" fill="none" stroke="var(--acc)" stroke-width="2.4" stroke-dasharray="6 5"/>'+
+      '<line x1="'+(cx+38)+'" y1="'+(cy-r-22)+'" x2="'+(cx+96)+'" y2="'+(cy-r-22)+'" stroke="var(--tx3)" stroke-width="1"/>'+
+      '<line x1="'+(cx+52)+'" y1="'+(cy-r-4)+'" x2="'+(cx+96)+'" y2="'+(cy-r-4)+'" stroke="var(--tx3)" stroke-width="1"/>'+
+      aV(cy-r-22,cy-r-4,cx+88,'10–12 mm')+
+      '<path d="M'+(cx-92)+' '+(cy-30)+' a34 34 0 0 1 26 -40" fill="none" stroke="var(--warn)" stroke-width="2" marker-end="url(#ar2)" stroke-dasharray="5 4"/>'+
+      '<text x="16" y="'+(cy+4)+'" class="d">lắc mạnh</text><text x="16" y="'+(cy+20)+'" class="d">không xoay</text>');
+  }
+};
+
+/* mat cat doc — ban ve ky thuat */
+function figMatCat(d){
+  const CX=178, CY=190, R=112, px = R/95;
+  const mm = v => v*px;
+  const rGap = R+mm(12), rEps = rGap+mm(25), rShell = rEps+mm(4);
+  const D1=172, D2=-30, BASE=CY+126;
+  const band=(r1,r2,f,extra,g1,g2)=>{ const s1=(g1==null?D1:g1), s2=(g2==null?D2:g2);
+    const a=P(CX,CY,r2,s1),b=P(CX,CY,r2,s2),c=P(CX,CY,r1,s2),e=P(CX,CY,r1,s1);
+    const la = Math.abs(s1-s2)>180 ? 1 : 0;
+    return '<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' A'+r2.toFixed(1)+' '+r2.toFixed(1)+' 0 '+la+' 1 '+b[0].toFixed(1)+' '+b[1].toFixed(1)+
+      ' L'+c[0].toFixed(1)+' '+c[1].toFixed(1)+' A'+r1.toFixed(1)+' '+r1.toFixed(1)+' 0 '+la+' 0 '+e[0].toFixed(1)+' '+e[1].toFixed(1)+
+      ' Z" fill="'+f+'" '+(extra||'')+'/>'; };
+  const h1=P(CX,CY,R,186), h2=P(CX,CY,R,-6);
+  let s='<path d="M'+h1[0].toFixed(1)+' '+h1[1].toFixed(1)+' A'+R+' '+R+' 0 1 1 '+h2[0].toFixed(1)+' '+h2[1].toFixed(1)+
+    ' C'+(CX+113)+' '+(CY+48)+' '+(CX+105)+' '+(CY+92)+' '+(CX+84)+' '+BASE+
+    ' L'+(CX-75)+' '+BASE+
+    ' C'+(CX-100)+' '+(CY+90)+' '+(CX-113)+' '+(CY+46)+' '+h1[0].toFixed(1)+' '+h1[1].toFixed(1)+
+    ' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>';
+  s += band(rEps,rShell,'url(#gs)','stroke="#080e14" stroke-width="1"');
+  s += band(rGap,rEps,'#33485f');
+  for(let g=D2+6;g<D1;g+=8){ const a=P(CX,CY,rGap+2,g), b=P(CX,CY,rEps-2,g);
+    s+='<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="#54708c" stroke-width=".8" opacity=".4"/>'; }
+  s += band(R,rGap,'#0d151e','opacity=".95"');
+  for(let i=0;i<Math.floor((D1-D2)/3.4);i++){ const g=D2+4+i*3.4; if(g>D1-4) break;
+    const a=P(CX,CY,R+1,g), b=P(CX,CY,rGap-2,g+(i%2?4:-3));
+    s+='<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' Q'+((a[0]+b[0])/2+2).toFixed(1)+' '+((a[1]+b[1])/2).toFixed(1)+' '+b[0].toFixed(1)+' '+b[1].toFixed(1)+
+      '" stroke="#6b7d90" stroke-width="1.7" fill="none" stroke-linecap="round"/>'; }
+  for(let k=-1;k<10;k++){ const g=k*20; if(!(D2+10<g&&g<D1-14)) continue;
+    const a=P(CX,CY,R+mm(1.5),g), b=P(CX,CY,rGap-1,g);
+    s+='<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="var(--acc)" stroke-width="5" stroke-linecap="round"/>'+
+       '<circle cx="'+a[0].toFixed(1)+'" cy="'+a[1].toFixed(1)+'" r="5.5" fill="var(--acc)"/>'; }
+  [[D1,D1-20],[D2+20,D2]].forEach(g=>{ s += band(R,R+mm(9),'var(--vio)','opacity=".9"',g[0],g[1]); });
+  const ring = rShell+20;
+  const tag=(r,deg,n)=>{ const a=P(CX,CY,r,deg), b=P(CX,CY,ring-10,deg), c=P(CX,CY,ring,deg);
+    return '<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+
+      '" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="3 3"/>'+
+      '<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="10" fill="var(--bg)" stroke="var(--acc)" stroke-width="1.4"/>'+
+      '<text x="'+c[0].toFixed(1)+'" y="'+(c[1]+4).toFixed(1)+'" text-anchor="middle" class="dc">'+n+'</text>'; };
+  s += tag(rShell-4,150,1) + tag(rEps-mm(12),126,2) + tag(R+mm(6),96,3) +
+       tag(rGap-mm(4),64,4) + tag(R+mm(4.5),20,5);
+  s += '<text x="'+CX+'" y="'+(BASE+18)+'" text-anchor="middle" class="r">dạng đầu · chu vi '+d.chuVi+' mm</text>';
+  return svg('0 0 360 340', s);
+}
+
+/* ---------------------------------------------------------------- du lieu du an */
+const CATS = ['Đồ đội đầu','Nội thất','Đồ dùng','May vá','Sửa chữa','Điện & mát','Cây cối'];
+
+const PROJECTS = [
+{
+  id:'dome01', name:'DOME-01 — khung nâng tóc cho mũ bảo hiểm', cat:'Đồ đội đầu',
+  diff:2, hours:2, blurb:'Khung sáu nan bằng lưới 3D lắp thêm vào chiếc mũ đang đội, tạo khe rỗng 10–12 mm trên đỉnh đầu. Đội cả ngày tóc vẫn còn nếp, mà không đụng một milimét nào vào phần xốp chịu va đập.',
+  calc:'dome', hasDraw:true,
+  tools:['Dao rọc giấy + thước sắt','Kim khâu bao, chỉ dù','Bật lửa (hơ mép dây)','Thước dây mềm'],
+  mats:[
+    {n:'Lưới 3D dày 10 mm', q:'1 tấm 30×30 cm', p:60000, note:'loại đệm ghế ô tô, độ cứng trung bình'},
+    {n:'Dây dù bản 25 mm', q:'1 m', p:15000, note:'làm đai gánh tải, phải là loại không giãn'},
+    {n:'Gai dính tự dính', q:'1 cặp 20 cm', p:20000, note:'cắt 6 miếng 25×25 mm'},
+    {n:'Chỉ dù + kim khâu bao', q:'1 bộ', p:15000, note:'chỉ số 20 trở lên, kim đầu tam giác'},
+    {n:'Keo silicon trung tính', q:'1 tuýp nhỏ', p:25000, note:'chỉ khi cần cố định thêm — tuyệt đối không keo 502'}
+  ],
+  steps:[
+    {t:'Đo đầu, đo mũ', fig:'do', d:'Thước dây mềm, để tóc như thường ngày. Hai số cần lấy: chu vi vòng đầu đo ngang trán, và cung qua đỉnh từ tai này sang tai kia. Mọi kích thước bên dưới suy ra từ hai số đó.'},
+    {t:'Vẽ dưỡng lên bìa', fig:'duong', d:'Nan dài L = cung qua đỉnh ÷ 2 + 10 mm chồng mép, rộng 30 mm ở chân thuôn còn 20 mm ở đỉnh. Cắt dưỡng bìa cứng trước, áp thử vào lòng mũ, sửa cho vừa rồi mới đụng đến vải.'},
+    {t:'Cắt lưới 3D', fig:'cat', d:'6 nan + 2 đĩa ra từ một tấm 30×30 cm, dao rọc giấy kèm thước sắt. Lưỡi dao giữ vuông góc mặt vải — mép cắt vát sẽ xẹp ngay khi đội. Mép đai hơ lửa cho khỏi tưa.'},
+    {t:'Ghép chỏm đỉnh', fig:'dinh', d:'Sáu nan xếp hình sao lệch nhau đúng 60°, kẹp giữa hai đĩa, khâu một vòng tròn quanh mép đĩa, chỉ dù mũi 5 mm. Đây là khớp chịu lực duy nhất của khung — khâu kỹ, đừng dán keo.'},
+    {t:'Khâu chân nan vào đai', fig:'chan', d:'Chia đều 6 điểm trên đai, cách nhau chu vi ÷ 6. Gập 10 mm chân nan, ốp mặt trong đai, khâu ô chữ nhật. Nan phải dựng thẳng 90° — nan ngả là khe rỗng tụt xuống còn 6 mm.'},
+    {t:'Khép vòng đai', fig:'vong', d:'Chồng hai đầu đai 30 mm, khâu ô chữ nhật có gạch chéo kiểu quai ba lô. Đội thử riêng vòng đai: ôm sát chân tóc, không bóp thái dương, luồn lọt một ngón tay.'},
+    {t:'Lắp vào mũ', fig:'lap', d:'Dán 6 miếng gai dính lên lớp lót vải trong mũ, không dán lên xốp EPS. Ấn khung vào, mặt cong hướng lên, đai trùng vành mũ. Cần keo thì dùng silicon trung tính — keo 502 ăn thủng xốp.'},
+    {t:'Đội thử, nghiệm thu', fig:'thu', d:'Ba phép thử: quai vẫn siết đúng nấc cũ · lắc mạnh đầu mũ không xoay · mũ không đội cao thêm quá 12 mm. Trượt một phép nào thì tháo ra chỉnh, đừng đi ra đường.'}
+  ],
+  warns:[
+    {t:'Không gọt, không khoan xốp EPS', d:'Gọt xốp 25 mm còn 13 mm thì gia tốc dội lại vọt từ ~213 g lên ~431 g — vượt xa ngưỡng an toàn.'},
+    {t:'Không thay, không nới quai', d:'Quai gốc là thứ giữ mũ trên đầu khi ngã. Khung mới phải nằm gọn bên trong, không đụng đến quai.'},
+    {t:'Không nâng mũ cao quá 12 mm', d:'Mũ đội cao lên thì tâm mũ lệch khỏi đỉnh đầu, cú va đập trượt ra mép mũ — chỗ mỏng nhất.'},
+    {t:'Không dùng vật liệu cứng', d:'Nan phải bấm tay là sập. Nhựa cứng, thanh kim loại, dây rút đều tạo điểm dồn lực lên hộp sọ.'},
+    {t:'Mũ đã ngã một lần thì bỏ', d:'Xốp EPS chỉ hấp thụ được một cú va đập. Đừng lắp khung vào chiếc mũ đã từng đập xuống đường.'}
+  ]
+},
+{
+  id:'kesach', name:'Kệ sách gỗ thông treo tường', cat:'Nội thất', diff:2, hours:3,
+  blurb:'Hai tấm ván thông bắt lên ke sắt chữ L. Rẻ, chắc, treo được 12–15 cuốn mỗi tầng nếu bắt trúng gạch đặc.',
+  tools:['Khoan búa + mũi 6 mm','Thước, bút chì, ni-vô','Cưa tay hoặc nhờ cửa hàng cắt'],
+  mats:[
+    {n:'Ván thông 1,2 m × 20 cm × 1,8 cm', q:'2 tấm', p:180000, note:'nhờ chỗ bán cắt sẵn cho phẳng'},
+    {n:'Ke sắt chữ L 20 cm', q:'4 cái', p:40000},
+    {n:'Vít nở 6 mm', q:'8 bộ', p:15000},
+    {n:'Giấy nhám #180', q:'2 tờ', p:10000},
+    {n:'Dầu lau gỗ', q:'100 ml', p:60000, note:'lau 2 lớp, cách nhau 4 giờ'}
+  ],
+  steps:[
+    {t:'Đo và vạch vị trí', d:'Vạch đường ngang bằng ni-vô, đánh dấu 2 điểm ke cách mép ván 15 cm mỗi bên.'},
+    {t:'Dò dây điện trước khi khoan', d:'Dùng máy dò hoặc tránh đường thẳng đứng phía trên ổ cắm và công tắc.'},
+    {t:'Cắt ván đúng kích thước', d:'Cắt xong bo nhẹ 4 cạnh bằng nhám cho khỏi dăm.'},
+    {t:'Chà nhám và lau dầu', d:'Nhám xuôi thớ, lau sạch bụi, quét dầu lớp mỏng, chờ khô rồi lau lớp hai.'},
+    {t:'Bắt ke vào tường', d:'Khoan, đóng nở, siết ke. Kiểm tra lại bằng ni-vô trước khi siết chặt.'},
+    {t:'Lắp ván, thử tải', d:'Bắt vít ván vào ke từ dưới lên. Ấn mạnh xuống mép ngoài thử trước khi xếp sách.'}
+  ],
+  warns:[{t:'Tường thạch cao thì phải dùng nở chuyên dụng', d:'Nở nhựa thường sẽ tuột, cả kệ rơi xuống. Tường thạch cao cần nở bướm hoặc bắt trúng khung xương.'}]
+},
+{
+  id:'denngu', name:'Đèn ngủ lọ thuỷ tinh + dây LED', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Món dễ nhất trong app này. Một lọ thuỷ tinh cũ, một cuộn dây LED chạy pin, 45 phút là xong.',
+  tools:['Kéo','Súng bắn keo (hoặc băng dính 2 mặt)'],
+  mats:[
+    {n:'Lọ thuỷ tinh miệng rộng', q:'1 cái', p:25000, note:'lọ dưa muối cũ rửa sạch cũng được'},
+    {n:'Dây LED 2 m chạy pin AA', q:'1 cuộn', p:45000, note:'chọn loại ánh sáng vàng ấm'},
+    {n:'Dây gai trang trí', q:'2 m', p:15000},
+    {n:'Keo nến', q:'3 thanh', p:10000}
+  ],
+  steps:[
+    {t:'Rửa và hong khô lọ', d:'Phải khô hoàn toàn bên trong, hơi nước đọng sẽ làm mờ lọ khi bật đèn.'},
+    {t:'Quấn dây gai quanh cổ lọ', d:'Bắt đầu từ dưới, quấn sát vòng, chấm keo nến 3 điểm để cố định.'},
+    {t:'Nhét dây LED vào lọ', d:'Thả từ đáy lên, dàn đều, để hộp pin nằm ngoài miệng lọ cho dễ thay.'},
+    {t:'Giấu hộp pin', d:'Dán hộp pin vào mặt sau lọ bằng băng dính 2 mặt, quay công tắc ra ngoài.'}
+  ]
+},
+{
+  id:'giadt', name:'Giá đỡ điện thoại từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Một khúc ống nước 27 mm cắt vát, sơn lại. Giữ điện thoại vững hơn mấy cái giá nhựa bán sẵn.',
+  tools:['Cưa sắt','Giấy nhám','Khẩu trang (khi sơn)'],
+  mats:[
+    {n:'Ống PVC Ø27 mm', q:'20 cm', p:8000},
+    {n:'Giấy nhám #240', q:'1 tờ', p:5000},
+    {n:'Sơn xịt', q:'1 chai nhỏ', p:35000}
+  ],
+  steps:[
+    {t:'Cắt khúc ống dài 9 cm', d:'Cưa vuông, dũa phẳng hai đầu.'},
+    {t:'Cắt rãnh đặt máy', d:'Cắt một rãnh rộng 12 mm sâu 2 cm, nghiêng 15° so với trục ống.'},
+    {t:'Khoét lỗ luồn dây sạc', d:'Khoan lỗ 10 mm ở đáy rãnh để cắm sạc khi đang dựng máy.'},
+    {t:'Chà nhám toàn bộ', d:'Nhám kỹ cho hết chữ in trên ống, sơn mới bám.'},
+    {t:'Xịt sơn 2 lớp mỏng', d:'Xịt ngoài trời, cách 25 cm, lớp sau cách lớp trước 20 phút.'}
+  ]
+},
+{
+  id:'tote', name:'Túi tote vải canvas khâu tay', cat:'May vá', diff:2, hours:2,
+  blurb:'Không cần máy khâu. Đường khâu tay mũi đột chắc hơn máy nếu làm đúng, và đẹp hơn hẳn túi chợ.',
+  tools:['Kim khâu tay số 5','Kéo cắt vải','Phấn vẽ vải','Bàn là'],
+  mats:[
+    {n:'Vải canvas 12 oz', q:'0,5 m khổ 1,5 m', p:55000},
+    {n:'Dây quai bản 3 cm', q:'1,2 m', p:20000},
+    {n:'Chỉ bền màu + kim', q:'1 bộ', p:15000},
+    {n:'Phấn vẽ vải', q:'1 viên', p:5000}
+  ],
+  steps:[
+    {t:'Cắt 2 mảnh 38 × 42 cm', d:'Chừa 1,5 cm đường may mỗi cạnh. Là phẳng trước khi vẽ.'},
+    {t:'Gấp mép miệng túi', d:'Gấp 2 lần, mỗi lần 1,5 cm, là chết nếp rồi khâu một đường thẳng.'},
+    {t:'Khâu quai vào thân', d:'Đặt quai cách mép bên 9 cm, khâu ô chữ nhật có gạch chéo — chỗ này chịu toàn bộ tải.'},
+    {t:'Úp hai mặt vào nhau', d:'Mặt phải úp vào trong, khâu ba cạnh bằng mũi đột, mũi 3 mm.'},
+    {t:'Gấp đáy tạo hông túi', d:'Gấp góc đáy thành tam giác, khâu ngang 8 cm để túi đứng được.'},
+    {t:'Lộn phải và là lại', d:'Lộn ra, đẩy góc cho vuông, là phẳng toàn bộ.'}
+  ]
+},
+{
+  id:'banlaptop', name:'Bàn laptop gấp gọn để trên giường', cat:'Nội thất', diff:2, hours:4,
+  blurb:'Mặt MDF phủ melamine + chân sắt gấp bán sẵn. Gấp lại nhét được xuống gầm giường.',
+  tools:['Khoan bắt vít','Tua vít','Giấy nhám','Thước'],
+  mats:[
+    {n:'Ván MDF phủ melamine 60 × 35 cm', q:'1 tấm', p:90000, note:'nhờ cắt sẵn và dán cạnh'},
+    {n:'Chân sắt gấp', q:'2 cái', p:150000},
+    {n:'Bản lề nhỏ', q:'2 cái', p:30000},
+    {n:'Vít 4 × 16 mm', q:'16 con', p:15000},
+    {n:'Nút cao su chống trượt', q:'4 cái', p:20000}
+  ],
+  steps:[
+    {t:'Kiểm tra tấm ván', d:'Đo lại kích thước, chà nhẹ 4 cạnh nếu chưa dán cạnh.'},
+    {t:'Đánh dấu vị trí chân', d:'Cách mép ngắn 5 cm, cách mép dài 4 cm, gấp vào trong không vướng.'},
+    {t:'Khoan mồi trước khi bắt vít', d:'Mũi 2,5 mm, sâu 12 mm. Không khoan mồi là MDF nứt.'},
+    {t:'Bắt chân gấp', d:'Siết đều bốn góc, thử gấp mở vài lần xem có kẹt không.'},
+    {t:'Dán nút cao su', d:'Dán mặt dưới bốn góc để không xước chăn ga.'},
+    {t:'Thử tải', d:'Đặt 5 kg lên giữa mặt bàn, để 10 phút xem có võng không.'}
+  ]
+},
+{
+  id:'chautuoi', name:'Chậu cây tự tưới từ chai nhựa', cat:'Cây cối', diff:1, hours:1,
+  blurb:'Cắt đôi chai nước, úp ngược phần trên. Đi vắng một tuần cây vẫn sống.',
+  tools:['Dao rọc giấy','Kéo'],
+  mats:[
+    {n:'Chai nhựa 1,5 L', q:'1 cái', p:0, note:'tận dụng chai cũ'},
+    {n:'Dây cotton bấc đèn', q:'20 cm', p:5000, note:'dây giày cotton cũng được'},
+    {n:'Đất trồng', q:'1 kg', p:20000}
+  ],
+  steps:[
+    {t:'Cắt đôi chai', d:'Cắt cách đáy khoảng 12 cm, cắt vòng đều tay cho khỏi méo.'},
+    {t:'Luồn dây bấc qua nắp', d:'Khoan lỗ giữa nắp, luồn dây, để thò xuống 8 cm và lên trên 5 cm.'},
+    {t:'Úp ngược phần trên vào phần đáy', d:'Phần cổ chai chúc xuống, dây bấc chạm đáy nước.'},
+    {t:'Đổ đất và trồng cây', d:'Đổ nước vào ngăn dưới đến 2/3, tưới đẫm lần đầu từ trên xuống cho dây ngấm.'}
+  ]
+},
+{
+  id:'dieuhoa', name:'Quạt mát mini từ thùng xốp và đá', cat:'Điện & mát', diff:2, hours:2,
+  blurb:'Không phải điều hoà, nhưng đứng trước nó thì mát thật. Hợp phòng nhỏ, ban công, quán vỉa hè.',
+  tools:['Dao rọc giấy','Bút dạ','Băng keo bạc'],
+  mats:[
+    {n:'Thùng xốp 20 lít có nắp', q:'1 cái', p:40000},
+    {n:'Quạt USB 12 V', q:'1 cái', p:90000, note:'loại quạt tản nhiệt 12 cm là vừa'},
+    {n:'Ống nhựa Ø90 mm', q:'2 khúc 10 cm', p:30000},
+    {n:'Băng keo bạc', q:'1 cuộn', p:25000}
+  ],
+  steps:[
+    {t:'Vạch lỗ trên nắp thùng', d:'Một lỗ tròn vừa quạt ở giữa, hai lỗ Ø90 hai bên làm miệng thổi.'},
+    {t:'Khoét lỗ', d:'Dùng dao rọc giấy khoét từ trong ra, cắt nhỏ hơn vạch 2 mm rồi gọt dần.'},
+    {t:'Lắp quạt thổi vào trong', d:'Chiều gió phải thổi xuống thùng, dán kín mép bằng băng keo bạc.'},
+    {t:'Cắm hai ống thổi', d:'Ống hướng chếch lên 30°, dán kín chân ống.'},
+    {t:'Cho đá và chạy thử', d:'Bỏ 2–3 chai nước đá đông sẵn vào, đậy nắp, cắm điện. Dùng chai đá thay vì đá rời để không đọng nước.'}
+  ],
+  warns:[{t:'Điện và nước ở gần nhau', d:'Chỉ dùng quạt 5 V/12 V với adapter, không đấu trực tiếp 220 V vào thùng có nước đá.'}]
+},
+{
+  id:'kegiay', name:'Kệ giày từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:2,
+  blurb:'Mấy khúc ống Ø90 dán chồng lên nhau thành tổ ong. Nhét vừa 8–10 đôi trong góc nhỏ.',
+  tools:['Cưa tay','Giấy nhám','Kẹp'],
+  mats:[
+    {n:'Ống PVC Ø90 mm', q:'2 m', p:70000},
+    {n:'Keo dán PVC', q:'1 lọ', p:25000},
+    {n:'Sơn xịt (tuỳ chọn)', q:'1 chai', p:35000}
+  ],
+  steps:[
+    {t:'Cắt ống thành 10 khúc 30 cm', d:'Cắt vuông góc, dũa sạch ba-via.'},
+    {t:'Chà nhám mặt tiếp xúc', d:'Nhám hai bên hông mỗi khúc ở chỗ sẽ dán, keo mới bám.'},
+    {t:'Dán tầng dưới trước', d:'Bốn khúc nằm ngang, dán vào nhau, kẹp lại 20 phút.'},
+    {t:'Xếp tầng trên so le', d:'Ba khúc tầng hai, hai khúc tầng ba, mỗi tầng lùi vào nửa ống.'}
+  ]
+},
+{
+  id:'voinuoc', name:'Sửa vòi nước rỉ (thay gioăng)', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'90% ca vòi rỉ là do gioăng cao su mòn. Mất 20 phút và 20 nghìn, không cần gọi thợ.',
+  tools:['Mỏ lết','Tua vít dẹt','Khăn khô'],
+  mats:[
+    {n:'Bộ gioăng cao su', q:'1 bộ', p:15000, note:'mang gioăng cũ ra hàng để mua đúng cỡ'},
+    {n:'Băng tan', q:'1 cuộn', p:8000}
+  ],
+  steps:[
+    {t:'Khoá van tổng', d:'Khoá van dưới bồn hoặc van tổng cả nhà, mở vòi cho xả hết nước còn lại.'},
+    {t:'Bịt lỗ thoát sàn', d:'Nhét khăn xuống lỗ thoát, ốc nhỏ rơi xuống là mất luôn.'},
+    {t:'Tháo tay gạt và ruột vòi', d:'Cạy nắp nhựa che vít, tháo vít, rút ruột vòi ra.'},
+    {t:'Thay gioăng', d:'Lấy gioăng cũ ra, lau sạch rãnh, lắp gioăng mới đúng cỡ.'},
+    {t:'Quấn băng tan và lắp lại', d:'Quấn 5–7 vòng theo chiều siết ren, lắp lại, mở van từ từ và kiểm tra.'}
+  ]
+},
+{
+  id:'ghelunglay', name:'Chữa ghế gỗ lung lay', cat:'Sửa chữa', diff:2, hours:2,
+  blurb:'Ghế lung lay không phải vì gãy, mà vì mộng khô keo. Tháo ra, làm sạch, dán lại là chắc như mới.',
+  tools:['Búa cao su','Kẹp dây (dây thừng + que xoắn cũng được)','Đục nhỏ','Giấy nhám'],
+  mats:[
+    {n:'Keo sữa dán gỗ', q:'1 lọ 100 ml', p:35000},
+    {n:'Chốt gỗ Ø8 mm', q:'10 cái', p:15000},
+    {n:'Giấy nhám #120', q:'2 tờ', p:10000}
+  ],
+  steps:[
+    {t:'Đánh dấu từng mối trước khi tháo', d:'Ghi số bằng bút chì lên chân và thanh ngang, lắp lại sẽ không lẫn.'},
+    {t:'Tháo rời mối lỏng', d:'Gõ búa cao su, không dùng búa sắt. Chỉ tháo mối nào lung lay.'},
+    {t:'Cạo sạch keo cũ', d:'Đục nhẹ và nhám cho tới khi thấy thớ gỗ, keo mới không bám lên keo cũ.'},
+    {t:'Bôi keo và lắp lại', d:'Bôi mỏng đều cả hai mặt mộng, lắp vào, gõ nhẹ cho khít.'},
+    {t:'Xiết kẹp và chờ 24 giờ', d:'Xiết vừa tay, lau keo tràn bằng khăn ẩm ngay, để khô trọn một ngày trước khi ngồi.'}
+  ]
+},
+{
+  id:'bangghim', name:'Bảng ghim treo tường bọc vải', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Tấm xốp ép bọc vải, ghim được giấy tờ, ảnh, hoá đơn. Treo cạnh bàn làm việc.',
+  tools:['Kéo','Súng bắn ghim hoặc keo nến','Thước'],
+  mats:[
+    {n:'Tấm xốp ép 40 × 60 cm', q:'1 tấm', p:45000},
+    {n:'Vải bố hoặc vải lanh', q:'0,5 m', p:30000},
+    {n:'Ghim mũ nhựa', q:'1 hộp', p:15000},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:10000}
+  ],
+  steps:[
+    {t:'Cắt vải to hơn tấm mỗi bề 8 cm', d:'Là phẳng vải trước khi bọc, nếp nhăn sẽ lộ hết khi căng.'},
+    {t:'Bọc và căng vải', d:'Kéo căng đều bốn cạnh, ghim hoặc dán keo mặt sau, gấp góc như gói quà.'},
+    {t:'Dán băng dính 2 mặt', d:'Dán 6 điểm mặt sau: bốn góc và hai điểm giữa.'},
+    {t:'Treo lên tường', d:'Lau sạch tường, ấn giữ 30 giây mỗi điểm. Tường sơn bụi thì nên bắt vít thay vì dán.'}
+  ]
+}
+];
+const byId = id => PROJECTS.find(p=>p.id===id);
+const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
+
+/* ---------------------------------------------------------------- icon */
+const Ico = ({d}) => <svg viewBox="0 0 24 24" dangerouslySetInnerHTML={{__html:d}}/>;
+const ICONS = {
+  lib:'<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>',
+  doing:'<path d="M14.7 6.3a4 4 0 0 0 5 5L15 16l-3 3-3-3 3-3z"/><path d="m6 18 2 2"/>',
+  shop:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H3"/>',
+  gal:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 5"/>',
+  me:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+  check:'<path d="m4 12 5 5L20 6"/>'
+};
+
+/* ---------------------------------------------------------------- App */
+function App(){
+  const [tab,setTab]      = useState('lib');
+  const [open,setOpen]    = useState(()=>{ const m=/#p=([\w-]+)/.exec(location.hash); return m && byId(m[1]) ? m[1] : null; });
+  const [doing,setDoingS] = useState(()=>store.get(K.doing,{}));
+  const [shop,setShopS]   = useState(()=>store.get(K.shop,{}));
+  const [gal,setGalS]     = useState(()=>store.get(K.gal,[]));
+  const [body,setBodyS]   = useState(()=>store.get(K.body,{chuVi:570,cung:330}));
+  const [light,setLight]  = useState(()=>store.get(K.theme,'dark')==='light');
+
+  const setDoing = v => { setDoingS(v); store.set(K.doing,v); };
+  const setShop  = v => { setShopS(v);  store.set(K.shop,v); };
+  const setGal   = v => { setGalS(v);   store.set(K.gal,v); };
+  const setBody  = v => { setBodyS(v);  store.set(K.body,v); };
+  useEffect(()=>{ document.body.classList.toggle('light',light); store.set(K.theme, light?'light':'dark'); },[light]);
+
+  const dims = useMemo(()=>({
+    chuVi: body.chuVi, cung: body.cung,
+    nanL: Math.round(body.cung/2 + 10),
+    daiL: Math.round(body.chuVi + 30),
+    spacing: Math.round(body.chuVi/6)
+  }),[body]);
+
+  const start = id => { if(doing[id]) return; setDoing({...doing,[id]:{started:today(),steps:{},done:false}}); };
+  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,open:setOpen,start};
+
+  const TABS = [['lib','Dự án',ICONS.lib],['doing','Đang làm',ICONS.doing],
+                ['shop','Đi chợ',ICONS.shop],['gal','Thành phẩm',ICONS.gal],['me','Tôi',ICONS.me]];
+  return (
+    <div>
+      {tab==='lib'   && <Library {...shared}/>}
+      {tab==='doing' && <Doing {...shared}/>}
+      {tab==='shop'  && <Shop {...shared}/>}
+      {tab==='gal'   && <Gallery {...shared}/>}
+      {tab==='me'    && <Me {...shared} light={light} setLight={setLight}/>}
+      {open && <ProjectView id={open} close={()=>setOpen(null)} {...shared}/>}
+      <nav>{TABS.map(([k,label,d])=>(
+        <button key={k} className={tab===k?'on':''} onClick={()=>setTab(k)}>
+          <Ico d={d}/>{label}
+        </button>))}
+      </nav>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- thu vien */
+const CAT_ICON = {
+  'Đồ đội đầu':'<path d="M14 44a26 26 0 0 1 52 0"/><path d="M8 44a32 32 0 0 1 64 0"/><path d="M40 18v-6M26 22l-3-5M54 22l3-5"/>',
+  'Nội thất'  :'<path d="M12 26h56M12 44h56"/><path d="M20 26v-6M60 26v-6M20 44v-6M60 44v-6"/>',
+  'Đồ dùng'   :'<rect x="18" y="20" width="44" height="30" rx="5"/><path d="M18 30h44M32 20v10"/>',
+  'May vá'    :'<path d="M18 50 62 18"/><circle cx="60" cy="20" r="4"/><path d="M22 46c8 4 14-2 10-8s2-12 10-8"/>',
+  'Sửa chữa'  :'<path d="M50 16a10 10 0 0 0-13 13L18 48l5 5 19-19a10 10 0 0 0 13-13l-7 7-6-6z"/>',
+  'Điện & mát':'<circle cx="40" cy="34" r="6"/><path d="M40 28c0-9 14-12 14-4s-8 8-14 4"/><path d="M40 40c0 9-14 12-14 4s8-8 14-4"/>',
+  'Cây cối'   :'<path d="M40 52V26"/><path d="M40 34c-12 0-16-8-16-14 10 0 16 6 16 14z"/><path d="M40 40c12 0 16-8 16-14-10 0-16 6-16 14z"/>'
+};
+function Thumb({p}){
+  return <div className="thumb" dangerouslySetInnerHTML={{__html:
+    '<svg viewBox="0 0 80 68"><g fill="none" stroke="var(--acc)" stroke-width="2.3" stroke-linecap="round" '+
+    'stroke-linejoin="round" opacity=".9">'+(CAT_ICON[p.cat]||CAT_ICON['Đồ dùng'])+'</g></svg>'}}/>;
+}
+
+function PCard({p,onClick,prog}){
+  return (
+    <div className="card pcard" onClick={onClick}>
+      <Thumb p={p}/>
+      <div style={{flex:1,minWidth:0}}>
+        <h3>{p.name}</h3>
+        <p className="muted" style={{marginTop:3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{p.blurb}</p>
+        <div className="meta">
+          <span className="chip">{p.cat}</span>
+          <span className="chip">{DIFF[p.diff]}</span>
+          <span className="chip">{p.hours} giờ</span>
+          <span className="chip acc">{vnd(projCost(p))}</span>
+        </div>
+        {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
+      </div>
+    </div>
+  );
+}
+
+function Library({open,doing}){
+  const [cat,setCat] = useState('all');
+  const [q,setQ] = useState('');
+  const list = PROJECTS.filter(p =>
+    (cat==='all'||p.cat===cat) &&
+    (!q || (p.name+' '+p.blurb+' '+p.cat).toLowerCase().includes(q.toLowerCase())));
+  const prog = p => { const d=doing[p.id]; if(!d) return null;
+    return Math.round(Object.values(d.steps||{}).filter(s=>s.done).length / p.steps.length * 100); };
+  return (
+    <div>
+      <div className="hd">
+        <h1>Xưởng Nhà</h1>
+        <p>{PROJECTS.length} dự án tự làm · vật liệu mua được ở Việt Nam</p>
+        <div className="seg">
+          <button className={cat==='all'?'on':''} onClick={()=>setCat('all')}>Tất cả</button>
+          {CATS.map(c=><button key={c} className={cat===c?'on':''} onClick={()=>setCat(c)}>{c}</button>)}
+        </div>
+      </div>
+      <div className="wrap">
+        <div style={{marginTop:12}}>
+          <input placeholder="Tìm dự án…" value={q} onChange={e=>setQ(e.target.value)}/>
+        </div>
+        {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} onClick={()=>open(p.id)}/>)}
+        {!list.length && <div className="empty">Không có dự án nào khớp.</div>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- chi tiet du an */
+function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start}){
+  const p = byId(id);
+  const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
+  const d = doing[id];
+  const stepState = (i)=> (d && d.steps && d.steps[i]) || {done:false,note:''};
+  const setStep = (i,patch)=>{
+    if(!d) return;
+    const steps = {...(d.steps||{})}; steps[i] = {...stepState(i),...patch};
+    setDoing({...doing,[id]:{...d,steps}});
+  };
+  const doneCount = d? Object.values(d.steps||{}).filter(s=>s.done).length : 0;
+  const pct = Math.round(doneCount/p.steps.length*100);
+  const segs = [['tq','Tổng quan'],['vl','Vật liệu'],['bw','Các bước']];
+  if(p.hasDraw) segs.push(['bv','Bản vẽ']);
+
+  return (
+    <div className="sheet">
+      <div className="shd">
+        <button className="back" onClick={close}>‹ Quay lại</button>
+        <h1 style={{fontSize:18,fontWeight:600,lineHeight:1.3}}>{p.name}</h1>
+        <div className="meta" style={{marginTop:7}}>
+          <span className="chip">{p.cat}</span><span className="chip">{DIFF[p.diff]}</span>
+          <span className="chip">{p.hours} giờ</span><span className="chip acc">{vnd(projCost(p))}</span>
+        </div>
+        <div className="seg">{segs.map(([k,l])=>
+          <button key={k} className={seg===k?'on':''} onClick={()=>setSeg(k)}>{l}</button>)}</div>
+      </div>
+      <div className="wrap">
+        {seg==='tq' && <>
+          <div className="card"><p className="muted" style={{fontSize:14,lineHeight:1.6}}>{p.blurb}</p></div>
+          {d ? <div className="card">
+              <div className="between"><b style={{fontSize:14}}>Đang làm — {doneCount}/{p.steps.length} bước</b>
+                <span className="tiny">bắt đầu {dateVN(d.started)}</span></div>
+              <div className="bar"><i style={{width:pct+'%'}}/></div>
+              {pct===100 && <p className="tiny" style={{marginTop:9,color:'var(--acc)'}}>Xong hết rồi — sang tab Thành phẩm lưu lại ảnh.</p>}
+            </div>
+            : <button className="btn" style={{marginTop:12}} onClick={()=>start(id)}>Bắt đầu làm dự án này</button>}
+          <div className="card">
+            <h3>Dụng cụ cần có</h3>
+            {p.tools.map((t,i)=><p key={i} className="muted" style={{marginTop:6}}>· {t}</p>)}
+          </div>
+          {p.warns && p.warns.map((w,i)=>
+            <div key={i} className="warnbox"><h4>{w.t}</h4><p>{w.d}</p></div>)}
+        </>}
+
+        {seg==='vl' && <MatList p={p} shop={shop} setShop={setShop}/>}
+
+        {seg==='bw' && <div className="card">
+          {!d && <p className="tiny" style={{marginBottom:10}}>Bấm “Bắt đầu làm” ở tab Tổng quan để tick được từng bước.</p>}
+          {p.steps.map((s,i)=>{
+            const st = stepState(i);
+            return (
+              <div className="step" key={i}>
+                <div className={'tick'+(st.done?' on':'')} onClick={()=>d&&setStep(i,{done:!st.done})}>
+                  {st.done && <Ico d={ICONS.check}/>}
+                </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="sn">BƯỚC {String(i+1).padStart(2,'0')}</div>
+                  <h3 style={{marginTop:2,fontSize:15}}>{s.t}</h3>
+                  <p className="muted" style={{marginTop:4}}>{s.d}</p>
+                  {s.fig && FIG[s.fig] &&
+                    <div className="fig" dangerouslySetInnerHTML={{__html:FIG[s.fig](dims)}}/>}
+                  {d && <textarea style={{marginTop:8,minHeight:44,fontSize:13}} placeholder="Ghi chú của Huy ở bước này…"
+                    value={st.note} onChange={e=>setStep(i,{note:e.target.value})}/>}
+                </div>
+              </div>);
+          })}
+        </div>}
+
+        {seg==='bv' && <DomeDraw dims={dims} body={body} setBody={setBody}/>}
+      </div>
+    </div>
+  );
+}
+
+function MatList({p,shop,setShop}){
+  const key = i => p.id+'::'+i;
+  const bought = i => !!shop[key(i)];
+  const toggle = i => { const s={...shop}; if(s[key(i)]) delete s[key(i)]; else s[key(i)]={at:today()}; setShop(s); };
+  const total = projCost(p);
+  const left  = p.mats.reduce((s,m,i)=> s + (bought(i)?0:m.p), 0);
+  return (
+    <div className="card">
+      {p.mats.map((m,i)=>(
+        <div className="mat" key={i}>
+          <div className={'tick'+(bought(i)?' on':'')} onClick={()=>toggle(i)}>{bought(i)&&<Ico d={ICONS.check}/>}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div className="between"><b style={{fontSize:14,textDecoration:bought(i)?'line-through':'none',opacity:bought(i)?.55:1}}>{m.n}</b>
+              <span style={{color:'var(--acc)',fontWeight:600,fontSize:13.5,whiteSpace:'nowrap'}}>{m.p?vnd(m.p):'có sẵn'}</span></div>
+            <p className="tiny" style={{marginTop:2}}>{m.q}{m.note?' · '+m.note:''}</p>
+          </div>
+        </div>))}
+      <div className="between" style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--line)'}}>
+        <span className="muted">Tổng {vndFull(total)}</span>
+        <b style={{color:'var(--acc)',fontSize:18}}>còn phải mua {vndFull(left)}</b>
+      </div>
+    </div>
+  );
+}
+
+function DomeDraw({dims,body,setBody}){
+  const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
+  return (<>
+    <div className="card">
+      <h3>Số đo của Huy</h3>
+      <p className="tiny" style={{marginTop:3}}>Đổi hai số này thì dưỡng cắt ở bước 02 và 05 tự tính lại.</p>
+      <div className="grid2" style={{marginTop:11}}>
+        <div><label className="fl">Chu vi vòng đầu (mm)</label>
+          <input inputMode="numeric" value={body.chuVi} onChange={e=>set('chuVi',e.target.value)}/></div>
+        <div><label className="fl">Cung qua đỉnh (mm)</label>
+          <input inputMode="numeric" value={body.cung} onChange={e=>set('cung',e.target.value)}/></div>
+      </div>
+      <div className="grid2" style={{marginTop:11}}>
+        <div className="kpi"><b>{dims.nanL} mm</b><span>dài mỗi nan (6 cái, 30→20 mm)</span></div>
+        <div className="kpi"><b>{dims.daiL} mm</b><span>dài đai dây dù bản 25 mm</span></div>
+        <div className="kpi"><b>{dims.spacing} mm</b><span>khoảng cách hai chân nan</span></div>
+        <div className="kpi"><b>Ø60 mm</b><span>hai đĩa chỏm đỉnh</span></div>
+      </div>
+    </div>
+    <div className="card">
+      <h3>Mặt cắt dọc</h3>
+      <p className="tiny" style={{marginTop:3}}>Khe rỗng 12 mm nằm trên đỉnh đầu · lớp xốp chịu va đập giữ nguyên 25 mm.</p>
+      <div className="fig" dangerouslySetInnerHTML={{__html:figMatCat(dims)}}/>
+      {[['1','Vỏ nhựa ABS','giữ nguyên như mũ đạt chuẩn'],
+        ['2','Xốp EPS 25 mm','không gọt, không khoan một milimét'],
+        ['3','Khe rỗng 12 mm','tóc dựng tự do, hơi ẩm có đường thoát'],
+        ['4','Nan lưới 3D','bấm tay là sập, không tạo điểm cứng'],
+        ['5','Đai gánh tải','trọng lượng dồn xuống chân tóc']].map(([n,t,d2])=>(
+        <div className="row" key={n} style={{marginTop:9,alignItems:'flex-start'}}>
+          <span style={{flex:'0 0 22px',height:22,borderRadius:99,border:'1.4px solid var(--acc)',color:'var(--acc)',
+            fontSize:11.5,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</span>
+          <div style={{flex:1}}><b style={{fontSize:13.5}}>{t}</b>
+            <p className="tiny" style={{marginTop:1}}>{d2}</p></div>
+        </div>))}
+    </div>
+    <div className="card">
+      <h3>Dưỡng cắt</h3>
+      <div className="fig" dangerouslySetInnerHTML={{__html:FIG.duong(dims)}}/>
+    </div>
+  </>);
+}
+
+/* ---------------------------------------------------------------- dang lam */
+function Doing({doing,setDoing,open}){
+  const list = Object.keys(doing).map(id=>({id,p:byId(id),st:doing[id]})).filter(x=>x.p);
+  const pct = x => Math.round(Object.values(x.st.steps||{}).filter(s=>s.done).length / x.p.steps.length*100);
+  const drop = id => { const d={...doing}; delete d[id]; setDoing(d); };
+  return (
+    <div>
+      <div className="hd"><h1>Đang làm</h1><p>{list.length} dự án trên bàn</p></div>
+      <div className="wrap">
+        {!list.length && <div className="empty">Chưa bắt đầu dự án nào.<br/>Sang tab Dự án, mở một cái rồi bấm “Bắt đầu làm”.</div>}
+        {list.sort((a,b)=>pct(b)-pct(a)).map(x=>(
+          <div className="card" key={x.id}>
+            <div className="pcard" onClick={()=>open(x.id)}>
+              <Thumb p={x.p}/>
+              <div style={{flex:1,minWidth:0}}>
+                <h3>{x.p.name}</h3>
+                <p className="tiny" style={{marginTop:3}}>bắt đầu {dateVN(x.st.started)} · {Object.values(x.st.steps||{}).filter(s=>s.done).length}/{x.p.steps.length} bước</p>
+                <div className="bar"><i style={{width:pct(x)+'%'}}/></div>
+              </div>
+            </div>
+            <div className="row" style={{marginTop:11}}>
+              <button className="btn sm" onClick={()=>open(x.id)}>Mở tiếp</button>
+              <button className="btn sm ghost" onClick={()=>{ if(confirm('Bỏ dự án này khỏi danh sách đang làm?')) drop(x.id); }}>Bỏ khỏi danh sách</button>
+            </div>
+          </div>))}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- di cho */
+function Shop({doing,shop,setShop,open}){
+  const ids = Object.keys(doing).filter(id=>byId(id));
+  const key = (id,i)=> id+'::'+i;
+  const toggle = k => { const s={...shop}; if(s[k]) delete s[k]; else s[k]={at:today()}; setShop(s); };
+  let need=0, spent=0;
+  ids.forEach(id=> byId(id).mats.forEach((m,i)=>{ if(shop[key(id,i)]) spent+=m.p; else need+=m.p; }));
+  return (
+    <div>
+      <div className="hd"><h1>Đi chợ</h1><p>Vật liệu gom từ các dự án đang làm</p></div>
+      <div className="wrap">
+        {!ids.length && <div className="empty">Chưa có gì để mua.<br/>Bắt đầu một dự án thì vật liệu của nó hiện ở đây.</div>}
+        {!!ids.length && <div className="grid2" style={{marginTop:12}}>
+          <div className="kpi"><b>{vndFull(need)}</b><span>còn phải mua</span></div>
+          <div className="kpi"><b style={{color:'var(--tx2)'}}>{vndFull(spent)}</b><span>đã mua</span></div>
+        </div>}
+        {ids.map(id=>{ const p=byId(id);
+          return (
+            <div className="card" key={id}>
+              <div className="between" style={{marginBottom:6}}>
+                <b style={{fontSize:14.5}}>{p.name}</b>
+                <button className="btn sm ghost" onClick={()=>open(id)}>Mở</button>
+              </div>
+              {p.mats.map((m,i)=>{ const k=key(id,i); const b=!!shop[k];
+                return (
+                  <div className="mat" key={i}>
+                    <div className={'tick'+(b?' on':'')} onClick={()=>toggle(k)}>{b&&<Ico d={ICONS.check}/>}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="between">
+                        <b style={{fontSize:13.5,textDecoration:b?'line-through':'none',opacity:b?.55:1}}>{m.n}</b>
+                        <span style={{color:b?'var(--tx3)':'var(--acc)',fontWeight:600,fontSize:13,whiteSpace:'nowrap'}}>{m.p?vnd(m.p):'có sẵn'}</span>
+                      </div>
+                      <p className="tiny" style={{marginTop:2}}>{m.q}</p>
+                    </div>
+                  </div>);
+              })}
+            </div>);
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- thanh pham */
+function shrink(file,cb){
+  const r = new FileReader();
+  r.onload = e => { const im=new Image();
+    im.onload = ()=>{ const s=Math.min(1,900/Math.max(im.width,im.height));
+      const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',0.72)); };
+    im.onerror = ()=>cb(null); im.src = e.target.result; };
+  r.readAsDataURL(file);
+}
+
+function Gallery({gal,setGal,doing}){
+  const [add,setAdd] = useState(false);
+  const [draft,setDraft] = useState({projId:'', note:'', img:null, stars:4});
+  const fileRef = useRef(null);
+  const save = ()=>{
+    if(!draft.projId){ alert('Chọn dự án đã.'); return; }
+    setGal([{...draft, id:'g'+Date.now(), date:today()}, ...gal]);
+    setDraft({projId:'',note:'',img:null,stars:4}); setAdd(false);
+  };
+  const del = id => { if(confirm('Xoá mục này?')) setGal(gal.filter(g=>g.id!==id)); };
+  return (
+    <div>
+      <div className="hd"><h1>Thành phẩm</h1><p>{gal.length} lần làm đã ghi lại</p></div>
+      <div className="wrap">
+        {!add && <button className="btn" style={{marginTop:12}} onClick={()=>setAdd(true)}>+ Ghi lại một thành phẩm</button>}
+        {add && <div className="card">
+          <label className="fl">Dự án</label>
+          <select value={draft.projId} onChange={e=>setDraft({...draft,projId:e.target.value})}>
+            <option value="">— chọn dự án —</option>
+            {PROJECTS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <label className="fl" style={{marginTop:11}}>Ảnh</label>
+          <input ref={fileRef} type="file" accept="image/*" style={{padding:8}}
+            onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(f) shrink(f,url=>setDraft(d=>({...d,img:url}))); }}/>
+          {draft.img && <img src={draft.img} style={{width:'100%',borderRadius:12,marginTop:10}}/>}
+          <label className="fl" style={{marginTop:11}}>Làm xong thấy sao?</label>
+          <textarea placeholder="Chỗ nào khó, lần sau sửa gì…" value={draft.note}
+            onChange={e=>setDraft({...draft,note:e.target.value})}/>
+          <div className="row" style={{marginTop:10}}>
+            <span className="tiny">Hài lòng:</span>
+            {[1,2,3,4,5].map(n=>
+              <span key={n} onClick={()=>setDraft({...draft,stars:n})}
+                style={{cursor:'pointer',fontSize:19,color:n<=draft.stars?'var(--warn)':'var(--line)'}}>★</span>)}
+          </div>
+          <div className="row" style={{marginTop:12}}>
+            <button className="btn" onClick={save}>Lưu</button>
+            <button className="btn ghost" onClick={()=>setAdd(false)}>Huỷ</button>
+          </div>
+        </div>}
+        {!gal.length && !add && <div className="empty">Chưa có thành phẩm nào.<br/>Làm xong một món thì chụp lại, lần sau làm sẽ nhanh hơn.</div>}
+        <div className="gal">
+          {gal.map(g=>{ const p=byId(g.projId);
+            return (
+              <figure key={g.id} onClick={()=>del(g.id)}>
+                {g.img ? <img src={g.img}/> :
+                  <div style={{height:118,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>không có ảnh</div>}
+                <figcaption>
+                  <b style={{color:'var(--tx)',fontSize:12.5,display:'block'}}>{p?p.name:'(dự án đã xoá)'}</b>
+                  <span className="tiny">{dateVN(g.date)}<span className="dot"/>{'★'.repeat(g.stars||0)}</span>
+                  {g.note && <p style={{marginTop:4,fontSize:11.5,color:'var(--tx2)'}}>{g.note}</p>}
+                </figcaption>
+              </figure>);
+          })}
+        </div>
+        {!!gal.length && <p className="tiny" style={{marginTop:10,textAlign:'center'}}>Bấm vào một ô để xoá.</p>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- toi */
+function Me({body,setBody,doing,gal,shop,light,setLight,dims}){
+  const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
+  const started = Object.keys(doing).length;
+  const finished = Object.keys(doing).filter(id=>{ const p=byId(id); if(!p) return false;
+    return Object.values(doing[id].steps||{}).filter(s=>s.done).length===p.steps.length; }).length;
+  let spent=0; Object.keys(shop).forEach(k=>{ const [id,i]=k.split('::'); const p=byId(id); if(p&&p.mats[i]) spent+=p.mats[i].p; });
+  const wipe = ()=>{ if(confirm('Xoá toàn bộ dữ liệu trong app? Không lấy lại được.')){
+    [K.doing,K.shop,K.gal,K.body].forEach(k=>store.del(k)); location.reload(); } };
+  return (
+    <div>
+      <div className="hd"><h1>Tôi</h1><p>Số đo, thống kê, cài đặt</p></div>
+      <div className="wrap">
+        <div className="grid2" style={{marginTop:12}}>
+          <div className="kpi"><b>{started}</b><span>dự án đã bắt tay vào</span></div>
+          <div className="kpi"><b>{finished}</b><span>dự án làm xong</span></div>
+          <div className="kpi"><b>{gal.length}</b><span>thành phẩm đã lưu</span></div>
+          <div className="kpi"><b style={{fontSize:16}}>{vndFull(spent)}</b><span>vật liệu đã mua</span></div>
+        </div>
+        <div className="card">
+          <h3>Số đo đầu</h3>
+          <p className="tiny" style={{marginTop:3}}>Dùng cho DOME-01 và các dự án đồ đội đầu sau này.</p>
+          <div className="grid2" style={{marginTop:11}}>
+            <div><label className="fl">Chu vi vòng đầu (mm)</label>
+              <input inputMode="numeric" value={body.chuVi} onChange={e=>set('chuVi',e.target.value)}/></div>
+            <div><label className="fl">Cung qua đỉnh (mm)</label>
+              <input inputMode="numeric" value={body.cung} onChange={e=>set('cung',e.target.value)}/></div>
+          </div>
+          <p className="tiny" style={{marginTop:9}}>→ nan {dims.nanL} mm · đai {dims.daiL} mm · chân nan cách nhau {dims.spacing} mm</p>
+        </div>
+        <div className="card">
+          <div className="between"><div><h3>Giao diện sáng</h3>
+            <p className="tiny" style={{marginTop:2}}>Dễ nhìn hơn khi làm ngoài sân.</p></div>
+            <button className="btn sm" onClick={()=>setLight(!light)}>{light?'Đang sáng':'Đang tối'}</button></div>
+        </div>
+        <div className="card">
+          <h3>Dữ liệu</h3>
+          <p className="tiny" style={{marginTop:3}}>Mọi thứ lưu ngay trong trình duyệt máy này, không gửi đi đâu cả.</p>
+          <button className="btn ghost sm" style={{marginTop:11,color:'var(--bad)',borderColor:'var(--bad)'}} onClick={wipe}>Xoá toàn bộ dữ liệu</button>
+        </div>
+        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà v1 · {PROJECTS.length} dự án</p>
+      </div>
+    </div>
+  );
+}
+
+const boot = document.getElementById('boot'); if(boot) boot.remove();
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
