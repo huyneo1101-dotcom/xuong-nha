@@ -308,21 +308,31 @@ function figMatCat(d){
   return svg('0 0 360 340', s);
 }
 
-/* ---------------------------------------------------------------- du lieu du an */
-const CATS = ['Đồ đội đầu','Nội thất','Đồ dùng','May vá','Sửa chữa','Điện & mát','Cây cối'];
+/* ================================================================ DỮ LIỆU DỰ ÁN
+   Sửa dữ liệu ở đây, không phải ở giao diện.
+   Mỗi dự án: id · name · cat · diff 1-3 · hours · blurb
+     tools[] dụng cụ · skills[] khoá kỹ năng (xem KYNANG)
+     mats[{n,q,p,note,mua}] vật liệu · steps[{t,d,fig}] các bước
+     warns[{t,d}] cấm kỵ · loi[] lỗi thường gặp · bien[] biến thể
+     flags{onao,bui,chungcu} ồn 1-3 · bụi 1-3 · làm được trong chung cư
+   ============================================================================= */
+const CATS = ['Đồ đội đầu','Nội thất','Đồ dùng','Bếp','May vá','Sửa chữa','Xe cộ','Điện & mát','Cây cối'];
+const MUA = {cho:'Chợ / tạp hoá', kimkhi:'Hàng kim khí', vai:'Hàng vải', go:'Xưởng gỗ', xe:'Tiệm xe', dien:'Hàng điện', mang:'Đặt trên mạng', nha:'Sẵn trong nhà'};
 
+/* == DATA:PROJECTS == */
 const PROJECTS = [
 {
   id:'dome01', name:'DOME-01 — khung nâng tóc cho mũ bảo hiểm', cat:'Đồ đội đầu',
   diff:2, hours:2, blurb:'Khung sáu nan bằng lưới 3D lắp thêm vào chiếc mũ đang đội, tạo khe rỗng 10–12 mm trên đỉnh đầu. Đội cả ngày tóc vẫn còn nếp, mà không đụng một milimét nào vào phần xốp chịu va đập.',
-  calc:'dome', hasDraw:true,
+  calc:'dome', hasDraw:true, flags:{onao:1,bui:1,chungcu:true},
   tools:['Dao rọc giấy + thước sắt','Kim khâu bao, chỉ dù','Bật lửa (hơ mép dây)','Thước dây mềm'],
+  skills:['do','cat','khau'],
   mats:[
-    {n:'Lưới 3D dày 10 mm', q:'1 tấm 30×30 cm', p:60000, note:'loại đệm ghế ô tô, độ cứng trung bình'},
-    {n:'Dây dù bản 25 mm', q:'1 m', p:15000, note:'làm đai gánh tải, phải là loại không giãn'},
-    {n:'Gai dính tự dính', q:'1 cặp 20 cm', p:20000, note:'cắt 6 miếng 25×25 mm'},
-    {n:'Chỉ dù + kim khâu bao', q:'1 bộ', p:15000, note:'chỉ số 20 trở lên, kim đầu tam giác'},
-    {n:'Keo silicon trung tính', q:'1 tuýp nhỏ', p:25000, note:'chỉ khi cần cố định thêm — tuyệt đối không keo 502'}
+    {n:'Lưới 3D dày 10 mm', q:'1 tấm 30×30 cm', p:60000, mua:'mang', note:'loại đệm ghế ô tô, độ cứng trung bình'},
+    {n:'Dây dù bản 25 mm', q:'1 m', p:15000, mua:'vai', note:'làm đai gánh tải, phải là loại không giãn'},
+    {n:'Gai dính tự dính', q:'1 cặp 20 cm', p:20000, mua:'vai', note:'cắt 6 miếng 25×25 mm'},
+    {n:'Chỉ dù + kim khâu bao', q:'1 bộ', p:15000, mua:'vai', note:'chỉ số 20 trở lên, kim đầu tam giác'},
+    {n:'Keo silicon trung tính', q:'1 tuýp nhỏ', p:25000, mua:'kimkhi', note:'chỉ khi cần cố định thêm — tuyệt đối không keo 502'}
   ],
   steps:[
     {t:'Đo đầu, đo mũ', fig:'do', d:'Thước dây mềm, để tóc như thường ngày. Hai số cần lấy: chu vi vòng đầu đo ngang trán, và cung qua đỉnh từ tai này sang tai kia. Mọi kích thước bên dưới suy ra từ hai số đó.'},
@@ -340,18 +350,22 @@ const PROJECTS = [
     {t:'Không nâng mũ cao quá 12 mm', d:'Mũ đội cao lên thì tâm mũ lệch khỏi đỉnh đầu, cú va đập trượt ra mép mũ — chỗ mỏng nhất.'},
     {t:'Không dùng vật liệu cứng', d:'Nan phải bấm tay là sập. Nhựa cứng, thanh kim loại, dây rút đều tạo điểm dồn lực lên hộp sọ.'},
     {t:'Mũ đã ngã một lần thì bỏ', d:'Xốp EPS chỉ hấp thụ được một cú va đập. Đừng lắp khung vào chiếc mũ đã từng đập xuống đường.'}
-  ]
+  ],
+  loi:['Cắt vát mép lưới — nan xẹp ngay lần đội đầu tiên.','Khâu chỏm đỉnh bằng chỉ thường: đứt sau vài tuần, cả khung xoè ra.','Đai cắt sát chu vi đầu, không chừa 30 mm chồng mép, khép vòng xong thì chật.'],
+  bien:['Mũ nửa đầu thì rút nan còn 5, bỏ nan gáy — chỗ đó mũ không che.','Trời nóng: dùng lưới 3D loại thưa hơn, thoáng hơn nhưng nhanh xẹp hơn.']
 },
 {
   id:'kesach', name:'Kệ sách gỗ thông treo tường', cat:'Nội thất', diff:2, hours:3,
   blurb:'Hai tấm ván thông bắt lên ke sắt chữ L. Rẻ, chắc, treo được 12–15 cuốn mỗi tầng nếu bắt trúng gạch đặc.',
+  flags:{onao:3,bui:3,chungcu:false},
   tools:['Khoan búa + mũi 6 mm','Thước, bút chì, ni-vô','Cưa tay hoặc nhờ cửa hàng cắt'],
+  skills:['do','khoan','cua','son'],
   mats:[
-    {n:'Ván thông 1,2 m × 20 cm × 1,8 cm', q:'2 tấm', p:180000, note:'nhờ chỗ bán cắt sẵn cho phẳng'},
-    {n:'Ke sắt chữ L 20 cm', q:'4 cái', p:40000},
-    {n:'Vít nở 6 mm', q:'8 bộ', p:15000},
-    {n:'Giấy nhám #180', q:'2 tờ', p:10000},
-    {n:'Dầu lau gỗ', q:'100 ml', p:60000, note:'lau 2 lớp, cách nhau 4 giờ'}
+    {n:'Ván thông 1,2 m × 20 cm × 1,8 cm', q:'2 tấm', p:180000, mua:'go', note:'nhờ chỗ bán cắt sẵn cho phẳng'},
+    {n:'Ke sắt chữ L 20 cm', q:'4 cái', p:40000, mua:'kimkhi'},
+    {n:'Vít nở 6 mm', q:'8 bộ', p:15000, mua:'kimkhi'},
+    {n:'Giấy nhám #180', q:'2 tờ', p:10000, mua:'kimkhi'},
+    {n:'Dầu lau gỗ', q:'100 ml', p:60000, mua:'kimkhi', note:'lau 2 lớp, cách nhau 4 giờ'}
   ],
   steps:[
     {t:'Đo và vạch vị trí', d:'Vạch đường ngang bằng ni-vô, đánh dấu 2 điểm ke cách mép ván 15 cm mỗi bên.'},
@@ -361,33 +375,41 @@ const PROJECTS = [
     {t:'Bắt ke vào tường', d:'Khoan, đóng nở, siết ke. Kiểm tra lại bằng ni-vô trước khi siết chặt.'},
     {t:'Lắp ván, thử tải', d:'Bắt vít ván vào ke từ dưới lên. Ấn mạnh xuống mép ngoài thử trước khi xếp sách.'}
   ],
-  warns:[{t:'Tường thạch cao thì phải dùng nở chuyên dụng', d:'Nở nhựa thường sẽ tuột, cả kệ rơi xuống. Tường thạch cao cần nở bướm hoặc bắt trúng khung xương.'}]
+  warns:[{t:'Tường thạch cao thì phải dùng nở chuyên dụng', d:'Nở nhựa thường sẽ tuột, cả kệ rơi xuống. Tường thạch cao cần nở bướm hoặc bắt trúng khung xương.'}],
+  loi:['Khoan trước rồi mới đo lại — sai một lỗ là thủng tường thừa.','Siết ke chặt hết cỡ ngay từ đầu, không còn chỗ chỉnh cho thăng bằng.'],
+  bien:['Không được khoan tường: dùng kệ chống hai bên tủ hoặc kệ đứng chân cao su.']
 },
 {
   id:'denngu', name:'Đèn ngủ lọ thuỷ tinh + dây LED', cat:'Đồ dùng', diff:1, hours:1,
   blurb:'Món dễ nhất trong app này. Một lọ thuỷ tinh cũ, một cuộn dây LED chạy pin, 45 phút là xong.',
+  flags:{onao:1,bui:1,chungcu:true},
   tools:['Kéo','Súng bắn keo (hoặc băng dính 2 mặt)'],
+  skills:['dan','cat'],
   mats:[
-    {n:'Lọ thuỷ tinh miệng rộng', q:'1 cái', p:25000, note:'lọ dưa muối cũ rửa sạch cũng được'},
-    {n:'Dây LED 2 m chạy pin AA', q:'1 cuộn', p:45000, note:'chọn loại ánh sáng vàng ấm'},
-    {n:'Dây gai trang trí', q:'2 m', p:15000},
-    {n:'Keo nến', q:'3 thanh', p:10000}
+    {n:'Lọ thuỷ tinh miệng rộng', q:'1 cái', p:25000, mua:'nha', note:'lọ dưa muối cũ rửa sạch cũng được'},
+    {n:'Dây LED 2 m chạy pin AA', q:'1 cuộn', p:45000, mua:'dien', note:'chọn loại ánh sáng vàng ấm'},
+    {n:'Dây gai trang trí', q:'2 m', p:15000, mua:'cho'},
+    {n:'Keo nến', q:'3 thanh', p:10000, mua:'cho'}
   ],
   steps:[
     {t:'Rửa và hong khô lọ', d:'Phải khô hoàn toàn bên trong, hơi nước đọng sẽ làm mờ lọ khi bật đèn.'},
     {t:'Quấn dây gai quanh cổ lọ', d:'Bắt đầu từ dưới, quấn sát vòng, chấm keo nến 3 điểm để cố định.'},
     {t:'Nhét dây LED vào lọ', d:'Thả từ đáy lên, dàn đều, để hộp pin nằm ngoài miệng lọ cho dễ thay.'},
     {t:'Giấu hộp pin', d:'Dán hộp pin vào mặt sau lọ bằng băng dính 2 mặt, quay công tắc ra ngoài.'}
-  ]
+  ],
+  loi:['Nhét cả hộp pin vào trong lọ — hết pin phải tháo hết dây ra.','Dùng dây LED cắm điện 220 V thay vì loại pin: nóng lọ, nguy hiểm nếu đổ.'],
+  bien:['Bỏ thêm một nắm bi thuỷ tinh xuống đáy: ánh sáng tán ra mềm hơn.']
 },
 {
   id:'giadt', name:'Giá đỡ điện thoại từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:1,
   blurb:'Một khúc ống nước 27 mm cắt vát, sơn lại. Giữ điện thoại vững hơn mấy cái giá nhựa bán sẵn.',
+  flags:{onao:2,bui:2,chungcu:true},
   tools:['Cưa sắt','Giấy nhám','Khẩu trang (khi sơn)'],
+  skills:['cua','son'],
   mats:[
-    {n:'Ống PVC Ø27 mm', q:'20 cm', p:8000},
-    {n:'Giấy nhám #240', q:'1 tờ', p:5000},
-    {n:'Sơn xịt', q:'1 chai nhỏ', p:35000}
+    {n:'Ống PVC Ø27 mm', q:'20 cm', p:8000, mua:'kimkhi'},
+    {n:'Giấy nhám #240', q:'1 tờ', p:5000, mua:'kimkhi'},
+    {n:'Sơn xịt', q:'1 chai nhỏ', p:35000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Cắt khúc ống dài 9 cm', d:'Cưa vuông, dũa phẳng hai đầu.'},
@@ -395,17 +417,21 @@ const PROJECTS = [
     {t:'Khoét lỗ luồn dây sạc', d:'Khoan lỗ 10 mm ở đáy rãnh để cắm sạc khi đang dựng máy.'},
     {t:'Chà nhám toàn bộ', d:'Nhám kỹ cho hết chữ in trên ống, sơn mới bám.'},
     {t:'Xịt sơn 2 lớp mỏng', d:'Xịt ngoài trời, cách 25 cm, lớp sau cách lớp trước 20 phút.'}
-  ]
+  ],
+  loi:['Rãnh cắt rộng quá 14 mm: máy có ốp vào là đổ.','Xịt sơn một lớp dày: chảy thành vệt, phải nhám lại từ đầu.'],
+  bien:['Cắt ống Ø34 mm thì dựng được cả máy tính bảng.']
 },
 {
   id:'tote', name:'Túi tote vải canvas khâu tay', cat:'May vá', diff:2, hours:2,
   blurb:'Không cần máy khâu. Đường khâu tay mũi đột chắc hơn máy nếu làm đúng, và đẹp hơn hẳn túi chợ.',
+  flags:{onao:1,bui:1,chungcu:true},
   tools:['Kim khâu tay số 5','Kéo cắt vải','Phấn vẽ vải','Bàn là'],
+  skills:['do','cat','khau'],
   mats:[
-    {n:'Vải canvas 12 oz', q:'0,5 m khổ 1,5 m', p:55000},
-    {n:'Dây quai bản 3 cm', q:'1,2 m', p:20000},
-    {n:'Chỉ bền màu + kim', q:'1 bộ', p:15000},
-    {n:'Phấn vẽ vải', q:'1 viên', p:5000}
+    {n:'Vải canvas 12 oz', q:'0,5 m khổ 1,5 m', p:55000, mua:'vai'},
+    {n:'Dây quai bản 3 cm', q:'1,2 m', p:20000, mua:'vai'},
+    {n:'Chỉ bền màu + kim', q:'1 bộ', p:15000, mua:'vai'},
+    {n:'Phấn vẽ vải', q:'1 viên', p:5000, mua:'vai'}
   ],
   steps:[
     {t:'Cắt 2 mảnh 38 × 42 cm', d:'Chừa 1,5 cm đường may mỗi cạnh. Là phẳng trước khi vẽ.'},
@@ -414,18 +440,22 @@ const PROJECTS = [
     {t:'Úp hai mặt vào nhau', d:'Mặt phải úp vào trong, khâu ba cạnh bằng mũi đột, mũi 3 mm.'},
     {t:'Gấp đáy tạo hông túi', d:'Gấp góc đáy thành tam giác, khâu ngang 8 cm để túi đứng được.'},
     {t:'Lộn phải và là lại', d:'Lộn ra, đẩy góc cho vuông, là phẳng toàn bộ.'}
-  ]
+  ],
+  loi:['Khâu quai bằng một đường thẳng: xách nặng vài lần là bung.','Quên chừa đường may, túi ra nhỏ hơn dự tính 3 cm mỗi chiều.'],
+  bien:['Thêm một túi con bên trong: cắt mảnh 15×18 cm, khâu lên mặt trong trước khi ráp thân.']
 },
 {
   id:'banlaptop', name:'Bàn laptop gấp gọn để trên giường', cat:'Nội thất', diff:2, hours:4,
   blurb:'Mặt MDF phủ melamine + chân sắt gấp bán sẵn. Gấp lại nhét được xuống gầm giường.',
+  flags:{onao:2,bui:2,chungcu:true},
   tools:['Khoan bắt vít','Tua vít','Giấy nhám','Thước'],
+  skills:['do','khoan'],
   mats:[
-    {n:'Ván MDF phủ melamine 60 × 35 cm', q:'1 tấm', p:90000, note:'nhờ cắt sẵn và dán cạnh'},
-    {n:'Chân sắt gấp', q:'2 cái', p:150000},
-    {n:'Bản lề nhỏ', q:'2 cái', p:30000},
-    {n:'Vít 4 × 16 mm', q:'16 con', p:15000},
-    {n:'Nút cao su chống trượt', q:'4 cái', p:20000}
+    {n:'Ván MDF phủ melamine 60 × 35 cm', q:'1 tấm', p:90000, mua:'go', note:'nhờ cắt sẵn và dán cạnh'},
+    {n:'Chân sắt gấp', q:'2 cái', p:150000, mua:'mang'},
+    {n:'Bản lề nhỏ', q:'2 cái', p:30000, mua:'kimkhi'},
+    {n:'Vít 4 × 16 mm', q:'16 con', p:15000, mua:'kimkhi'},
+    {n:'Nút cao su chống trượt', q:'4 cái', p:20000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Kiểm tra tấm ván', d:'Đo lại kích thước, chà nhẹ 4 cạnh nếu chưa dán cạnh.'},
@@ -434,33 +464,41 @@ const PROJECTS = [
     {t:'Bắt chân gấp', d:'Siết đều bốn góc, thử gấp mở vài lần xem có kẹt không.'},
     {t:'Dán nút cao su', d:'Dán mặt dưới bốn góc để không xước chăn ga.'},
     {t:'Thử tải', d:'Đặt 5 kg lên giữa mặt bàn, để 10 phút xem có võng không.'}
-  ]
+  ],
+  loi:['Bắt vít thẳng vào MDF không khoan mồi — nứt toác mặt dưới.','Vít dài hơn 16 mm: đâm thủng lên mặt bàn.'],
+  bien:['Khoét một rãnh thoát nhiệt 4×12 cm ở mép trong, máy chạy mát hơn hẳn.']
 },
 {
   id:'chautuoi', name:'Chậu cây tự tưới từ chai nhựa', cat:'Cây cối', diff:1, hours:1,
   blurb:'Cắt đôi chai nước, úp ngược phần trên. Đi vắng một tuần cây vẫn sống.',
+  flags:{onao:1,bui:1,chungcu:true},
   tools:['Dao rọc giấy','Kéo'],
+  skills:['cat'],
   mats:[
-    {n:'Chai nhựa 1,5 L', q:'1 cái', p:0, note:'tận dụng chai cũ'},
-    {n:'Dây cotton bấc đèn', q:'20 cm', p:5000, note:'dây giày cotton cũng được'},
-    {n:'Đất trồng', q:'1 kg', p:20000}
+    {n:'Chai nhựa 1,5 L', q:'1 cái', p:0, mua:'nha', note:'tận dụng chai cũ'},
+    {n:'Dây cotton bấc đèn', q:'20 cm', p:5000, mua:'cho', note:'dây giày cotton cũng được'},
+    {n:'Đất trồng', q:'1 kg', p:20000, mua:'cho'}
   ],
   steps:[
     {t:'Cắt đôi chai', d:'Cắt cách đáy khoảng 12 cm, cắt vòng đều tay cho khỏi méo.'},
     {t:'Luồn dây bấc qua nắp', d:'Khoan lỗ giữa nắp, luồn dây, để thò xuống 8 cm và lên trên 5 cm.'},
     {t:'Úp ngược phần trên vào phần đáy', d:'Phần cổ chai chúc xuống, dây bấc chạm đáy nước.'},
     {t:'Đổ đất và trồng cây', d:'Đổ nước vào ngăn dưới đến 2/3, tưới đẫm lần đầu từ trên xuống cho dây ngấm.'}
-  ]
+  ],
+  loi:['Dùng dây nylon thay cotton: không hút nước, cây vẫn chết khô.','Đổ nước ngập cả cổ chai — đất úng, thối rễ trong một tuần.'],
+  bien:['Bọc giấy bạc quanh ngăn nước để ánh sáng không lọt vào, đỡ lên rêu.']
 },
 {
   id:'dieuhoa', name:'Quạt mát mini từ thùng xốp và đá', cat:'Điện & mát', diff:2, hours:2,
   blurb:'Không phải điều hoà, nhưng đứng trước nó thì mát thật. Hợp phòng nhỏ, ban công, quán vỉa hè.',
+  flags:{onao:2,bui:2,chungcu:true},
   tools:['Dao rọc giấy','Bút dạ','Băng keo bạc'],
+  skills:['cat','dien','dan'],
   mats:[
-    {n:'Thùng xốp 20 lít có nắp', q:'1 cái', p:40000},
-    {n:'Quạt USB 12 V', q:'1 cái', p:90000, note:'loại quạt tản nhiệt 12 cm là vừa'},
-    {n:'Ống nhựa Ø90 mm', q:'2 khúc 10 cm', p:30000},
-    {n:'Băng keo bạc', q:'1 cuộn', p:25000}
+    {n:'Thùng xốp 20 lít có nắp', q:'1 cái', p:40000, mua:'cho'},
+    {n:'Quạt USB 12 V', q:'1 cái', p:90000, mua:'dien', note:'loại quạt tản nhiệt 12 cm là vừa'},
+    {n:'Ống nhựa Ø90 mm', q:'2 khúc 10 cm', p:30000, mua:'kimkhi'},
+    {n:'Băng keo bạc', q:'1 cuộn', p:25000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Vạch lỗ trên nắp thùng', d:'Một lỗ tròn vừa quạt ở giữa, hai lỗ Ø90 hai bên làm miệng thổi.'},
@@ -469,31 +507,39 @@ const PROJECTS = [
     {t:'Cắm hai ống thổi', d:'Ống hướng chếch lên 30°, dán kín chân ống.'},
     {t:'Cho đá và chạy thử', d:'Bỏ 2–3 chai nước đá đông sẵn vào, đậy nắp, cắm điện. Dùng chai đá thay vì đá rời để không đọng nước.'}
   ],
-  warns:[{t:'Điện và nước ở gần nhau', d:'Chỉ dùng quạt 5 V/12 V với adapter, không đấu trực tiếp 220 V vào thùng có nước đá.'}]
+  warns:[{t:'Điện và nước ở gần nhau', d:'Chỉ dùng quạt 5 V/12 V với adapter, không đấu trực tiếp 220 V vào thùng có nước đá.'}],
+  loi:['Đổ đá rời: tan ra thành nước, nghiêng thùng là tràn vào quạt.','Lắp quạt hút ngược chiều — thổi hơi nóng ra, càng bí.'],
+  bien:['Thay hai ống bằng một ống Ø110: gió tập trung, xa hơn nhưng hẹp hơn.']
 },
 {
   id:'kegiay', name:'Kệ giày từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:2,
   blurb:'Mấy khúc ống Ø90 dán chồng lên nhau thành tổ ong. Nhét vừa 8–10 đôi trong góc nhỏ.',
+  flags:{onao:2,bui:2,chungcu:true},
   tools:['Cưa tay','Giấy nhám','Kẹp'],
+  skills:['cua','dan'],
   mats:[
-    {n:'Ống PVC Ø90 mm', q:'2 m', p:70000},
-    {n:'Keo dán PVC', q:'1 lọ', p:25000},
-    {n:'Sơn xịt (tuỳ chọn)', q:'1 chai', p:35000}
+    {n:'Ống PVC Ø90 mm', q:'2 m', p:70000, mua:'kimkhi'},
+    {n:'Keo dán PVC', q:'1 lọ', p:25000, mua:'kimkhi'},
+    {n:'Sơn xịt (tuỳ chọn)', q:'1 chai', p:35000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Cắt ống thành 10 khúc 30 cm', d:'Cắt vuông góc, dũa sạch ba-via.'},
     {t:'Chà nhám mặt tiếp xúc', d:'Nhám hai bên hông mỗi khúc ở chỗ sẽ dán, keo mới bám.'},
     {t:'Dán tầng dưới trước', d:'Bốn khúc nằm ngang, dán vào nhau, kẹp lại 20 phút.'},
     {t:'Xếp tầng trên so le', d:'Ba khúc tầng hai, hai khúc tầng ba, mỗi tầng lùi vào nửa ống.'}
-  ]
+  ],
+  loi:['Dán khi mặt ống còn bóng: keo không ăn, tầng trên rơi.','Xếp thẳng cột thay vì so le — cả khối đổ nghiêng.'],
+  bien:['Giày cao cổ thì cắt khúc 35 cm cho tầng dưới cùng.']
 },
 {
   id:'voinuoc', name:'Sửa vòi nước rỉ (thay gioăng)', cat:'Sửa chữa', diff:1, hours:1,
   blurb:'90% ca vòi rỉ là do gioăng cao su mòn. Mất 20 phút và 20 nghìn, không cần gọi thợ.',
+  flags:{onao:1,bui:1,chungcu:true},
   tools:['Mỏ lết','Tua vít dẹt','Khăn khô'],
+  skills:['oc'],
   mats:[
-    {n:'Bộ gioăng cao su', q:'1 bộ', p:15000, note:'mang gioăng cũ ra hàng để mua đúng cỡ'},
-    {n:'Băng tan', q:'1 cuộn', p:8000}
+    {n:'Bộ gioăng cao su', q:'1 bộ', p:15000, mua:'kimkhi', note:'mang gioăng cũ ra hàng để mua đúng cỡ'},
+    {n:'Băng tan', q:'1 cuộn', p:8000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Khoá van tổng', d:'Khoá van dưới bồn hoặc van tổng cả nhà, mở vòi cho xả hết nước còn lại.'},
@@ -501,16 +547,20 @@ const PROJECTS = [
     {t:'Tháo tay gạt và ruột vòi', d:'Cạy nắp nhựa che vít, tháo vít, rút ruột vòi ra.'},
     {t:'Thay gioăng', d:'Lấy gioăng cũ ra, lau sạch rãnh, lắp gioăng mới đúng cỡ.'},
     {t:'Quấn băng tan và lắp lại', d:'Quấn 5–7 vòng theo chiều siết ren, lắp lại, mở van từ từ và kiểm tra.'}
-  ]
+  ],
+  loi:['Quên khoá van tổng — mở ra là nước phun đầy nhà.','Quấn băng tan ngược chiều ren: siết vào là băng tuột hết.'],
+  bien:['Vòi cảm ứng pin: rỉ thường do van điện, thay gioăng không ăn thua.']
 },
 {
   id:'ghelunglay', name:'Chữa ghế gỗ lung lay', cat:'Sửa chữa', diff:2, hours:2,
   blurb:'Ghế lung lay không phải vì gãy, mà vì mộng khô keo. Tháo ra, làm sạch, dán lại là chắc như mới.',
+  flags:{onao:2,bui:2,chungcu:true},
   tools:['Búa cao su','Kẹp dây (dây thừng + que xoắn cũng được)','Đục nhỏ','Giấy nhám'],
+  skills:['dan','do'],
   mats:[
-    {n:'Keo sữa dán gỗ', q:'1 lọ 100 ml', p:35000},
-    {n:'Chốt gỗ Ø8 mm', q:'10 cái', p:15000},
-    {n:'Giấy nhám #120', q:'2 tờ', p:10000}
+    {n:'Keo sữa dán gỗ', q:'1 lọ 100 ml', p:35000, mua:'kimkhi'},
+    {n:'Chốt gỗ Ø8 mm', q:'10 cái', p:15000, mua:'go'},
+    {n:'Giấy nhám #120', q:'2 tờ', p:10000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Đánh dấu từng mối trước khi tháo', d:'Ghi số bằng bút chì lên chân và thanh ngang, lắp lại sẽ không lẫn.'},
@@ -518,26 +568,305 @@ const PROJECTS = [
     {t:'Cạo sạch keo cũ', d:'Đục nhẹ và nhám cho tới khi thấy thớ gỗ, keo mới không bám lên keo cũ.'},
     {t:'Bôi keo và lắp lại', d:'Bôi mỏng đều cả hai mặt mộng, lắp vào, gõ nhẹ cho khít.'},
     {t:'Xiết kẹp và chờ 24 giờ', d:'Xiết vừa tay, lau keo tràn bằng khăn ẩm ngay, để khô trọn một ngày trước khi ngồi.'}
-  ]
+  ],
+  loi:['Bôi keo đè lên keo cũ: hai ngày sau lại lung lay y như trước.','Đóng đinh cho nhanh — nứt chân ghế, sau này không sửa được nữa.'],
+  bien:['Mộng rộng quá: chèn thêm một lát gỗ mỏng phết keo, đừng nhồi giấy.']
 },
 {
   id:'bangghim', name:'Bảng ghim treo tường bọc vải', cat:'Đồ dùng', diff:1, hours:1,
   blurb:'Tấm xốp ép bọc vải, ghim được giấy tờ, ảnh, hoá đơn. Treo cạnh bàn làm việc.',
+  flags:{onao:1,bui:1,chungcu:true},
   tools:['Kéo','Súng bắn ghim hoặc keo nến','Thước'],
+  skills:['do','cat','dan'],
   mats:[
-    {n:'Tấm xốp ép 40 × 60 cm', q:'1 tấm', p:45000},
-    {n:'Vải bố hoặc vải lanh', q:'0,5 m', p:30000},
-    {n:'Ghim mũ nhựa', q:'1 hộp', p:15000},
-    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:10000}
+    {n:'Tấm xốp ép 40 × 60 cm', q:'1 tấm', p:45000, mua:'mang'},
+    {n:'Vải bố hoặc vải lanh', q:'0,5 m', p:30000, mua:'vai'},
+    {n:'Ghim mũ nhựa', q:'1 hộp', p:15000, mua:'cho'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:10000, mua:'kimkhi'}
   ],
   steps:[
     {t:'Cắt vải to hơn tấm mỗi bề 8 cm', d:'Là phẳng vải trước khi bọc, nếp nhăn sẽ lộ hết khi căng.'},
     {t:'Bọc và căng vải', d:'Kéo căng đều bốn cạnh, ghim hoặc dán keo mặt sau, gấp góc như gói quà.'},
     {t:'Dán băng dính 2 mặt', d:'Dán 6 điểm mặt sau: bốn góc và hai điểm giữa.'},
     {t:'Treo lên tường', d:'Lau sạch tường, ấn giữ 30 giây mỗi điểm. Tường sơn bụi thì nên bắt vít thay vì dán.'}
-  ]
+  ],
+  loi:['Dán lên tường sơn bụi: hai hôm sau rơi cả bảng.','Căng vải một bên trước rồi mới bên kia — vải lệch thớ, nhăn chéo.'],
+  bien:['Chia ô bằng dây ruy băng đóng ghim chéo, ảnh cài vào không cần ghim.']
+},
+{
+  id:'giadao', name:'Giá dao nam châm gắn tường', cat:'Bếp', diff:2, hours:2,
+  blurb:'Thanh gỗ giấu nam châm bên trong, dao dính lên mặt gỗ. Sạch hơn ống cắm dao, dao lâu cùn hơn.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Khoan + mũi gỗ 10 mm','Đục','Giấy nhám','Ni-vô'],
+  skills:['do','khoan','dan','son'],
+  mats:[
+    {n:'Thanh gỗ 40 × 6 × 2 cm', q:'1 thanh', p:45000, mua:'go', note:'gỗ thông hoặc sồi, mặt phẳng'},
+    {n:'Nam châm neodymium Ø10×3 mm', q:'10 viên', p:50000, mua:'mang'},
+    {n:'Keo epoxy 2 thành phần', q:'1 bộ nhỏ', p:30000, mua:'kimkhi'},
+    {n:'Dầu lau gỗ thực phẩm', q:'50 ml', p:45000, mua:'mang', note:'dầu khoáng food-grade, dao chạm vào an toàn'},
+    {n:'Vít nở 6 mm', q:'2 bộ', p:8000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Vạch 10 điểm cách đều mặt sau', d:'Cách nhau 3,5 cm dọc theo tim thanh gỗ. Nam châm nằm ở mặt SAU, không xuyên ra mặt trước.'},
+    {t:'Khoét hốc sâu 3,5 mm', d:'Mũi gỗ 10 mm, dán băng dính lên mũi làm cữ độ sâu. Chừa ít nhất 4 mm gỗ về phía mặt trước.'},
+    {t:'Thử lực hút trước khi dán', d:'Đặt nam châm vào hốc, úp dao lên mặt trước. Dao dính chắc thì mới trộn keo.'},
+    {t:'Dán nam châm bằng epoxy', d:'Chú ý mọi viên cùng chiều cực. Lau sạch keo tràn, chờ khô 30 phút.'},
+    {t:'Chà nhám và lau dầu', d:'Nhám #240 toàn bộ, lau 2 lớp dầu thực phẩm, chờ khô 4 giờ.'},
+    {t:'Bắt lên tường', d:'Cách mặt bếp ít nhất 40 cm, ni-vô cho thẳng, thử treo dao nặng nhất trước.'}
+  ],
+  warns:[{t:'Khoét quá sâu là hỏng cả thanh', d:'Còn dưới 3 mm gỗ ở mặt trước thì nam châm sẽ lộ hoặc làm nứt gỗ. Làm cữ độ sâu, đừng ước lượng bằng mắt.'},
+         {t:'Không lắp trong tầm với của trẻ con', d:'Dao dính trên tường rất dễ gạt rơi. Lắp cao trên 1,5 m hoặc bỏ dự án này.'}],
+  loi:['Dán nam châm ngược cực nhau: chúng đẩy nhau, keo chưa khô đã lệch.','Dùng keo 502 thay epoxy — bở, vài tháng là nam châm rơi trong hốc.'],
+  bien:['Không muốn khoét: dán nam châm lên mặt sau rồi ốp thêm một tấm ván mỏng 3 mm che lại.']
+},
+{
+  id:'thotgo', name:'Phục hồi thớt gỗ bằng dầu', cat:'Bếp', diff:1, hours:1,
+  blurb:'Thớt xám, nứt chân chim, ám mùi — chà nhám rồi nuôi dầu là về gần như mới. Làm 20 phút, chờ qua đêm.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Giấy nhám #120 và #240','Khăn cotton cũ','Chanh + muối hạt'],
+  skills:['son'],
+  mats:[
+    {n:'Dầu khoáng food-grade', q:'100 ml', p:60000, mua:'mang', note:'không dùng dầu ăn — dầu ăn ôi và bốc mùi'},
+    {n:'Sáp ong (tuỳ chọn)', q:'20 g', p:30000, mua:'mang', note:'trộn với dầu thành sáp bảo vệ'},
+    {n:'Giấy nhám', q:'2 tờ mỗi cỡ', p:15000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Khử mùi bằng chanh và muối', d:'Rắc muối hạt, chà nửa quả chanh khắp mặt thớt, để 10 phút rồi rửa sạch.'},
+    {t:'Hong thật khô', d:'Dựng đứng cho thoáng hai mặt, ít nhất 4 giờ. Chà nhám khi còn ẩm là xù thớ.'},
+    {t:'Chà nhám #120 rồi #240', d:'Chà xuôi thớ, đều tay, tới khi hết vết xám và vết dao sâu.'},
+    {t:'Lau dầu lớp đầu', d:'Đổ dầu trực tiếp lên mặt thớt, xoa khắp cả cạnh và mặt dưới, để ngấm 30 phút rồi lau khô phần thừa.'},
+    {t:'Lặp lại 3 lớp, chờ qua đêm', d:'Mỗi lớp cách nhau 4 giờ. Xong để đứng qua đêm rồi mới dùng.'}
+  ],
+  warns:[{t:'Không dùng dầu ăn thường', d:'Dầu ăn (đậu nành, hướng dương, ô liu) bị ôi trong gỗ, vài tuần là thớt bốc mùi khét không cứu được.'}],
+  loi:['Ngâm thớt trong nước cho sạch trước khi làm — gỗ nứt toác khi khô.','Lau dầu khi thớt còn ẩm: dầu không ngấm, chỉ đọng thành váng dính.'],
+  bien:['Thớt nứt sâu: nhét mạt cưa trộn keo sữa vào khe, chà phẳng rồi mới nuôi dầu.']
+},
+{
+  id:'tuiluoi', name:'Túi lưới đi chợ', cat:'May vá', diff:2, hours:2,
+  blurb:'Một mảnh lưới co giãn + dây quai. Gấp bằng nắm tay, đựng được 5 kg rau củ, thay hẳn túi nilon.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kim khâu tay','Kéo cắt vải','Kẹp ghim'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Vải lưới co giãn', q:'0,5 m', p:40000, mua:'vai', note:'loại lưới may đồ thể thao, mắt 3–5 mm'},
+    {n:'Dây dù bản 2 cm', q:'1,2 m', p:18000, mua:'vai'},
+    {n:'Chỉ bền + kim', q:'1 bộ', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Cắt một mảnh 40 × 80 cm', d:'Cắt dọc theo chiều co giãn nằm ngang thân túi, túi mới nở ra được.'},
+    {t:'Gập đôi và khâu hai cạnh', d:'Mặt trái ra ngoài, khâu mũi đột hai cạnh bên, mũi 3 mm, khâu hai lượt cho chắc.'},
+    {t:'Viền miệng túi', d:'Gập mép 1,5 cm, khâu vòng quanh. Lưới không tưa nhưng viền cho đứng miệng.'},
+    {t:'Khâu quai', d:'Cắt dây làm đôi, mỗi quai 60 cm, đặt cách mép bên 8 cm, khâu ô chữ nhật gạch chéo.'},
+    {t:'Thử tải 5 kg', d:'Bỏ 5 chai nước 1 lít vào xách thử. Đường khâu quai là chỗ đứt đầu tiên.'}
+  ],
+  loi:['Cắt sai chiều co giãn: túi không nở, đựng được nửa số đồ.','Khâu một lượt: lưới giãn làm mũi chỉ hở, rau lọt ra ngoài.'],
+  bien:['Khâu thêm một túi con ở đáy, lộn ngược nhét cả túi vào để gấp gọn bỏ ba lô.']
+},
+{
+  id:'maphanh', name:'Thay má phanh xe đạp', cat:'Xe cộ', diff:1, hours:1,
+  blurb:'Phanh kêu ken két hoặc bóp hết tay mới ăn là má mòn. Việc 20 phút, không cần ra tiệm.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Lục giác 5 mm','Kìm','Khăn lau'],
+  skills:['oc','do'],
+  mats:[
+    {n:'Má phanh xe đạp', q:'1 cặp', p:60000, mua:'xe', note:'mang má cũ ra tiệm để mua đúng loại (V-brake hay đĩa)'},
+    {n:'Cồn lau đĩa (nếu phanh đĩa)', q:'50 ml', p:20000, mua:'xe'}
+  ],
+  steps:[
+    {t:'Xem còn bao nhiêu má', d:'Rãnh chỉ báo mòn trên má phanh biến mất là phải thay. Dưới 1 mm cao su là quá muộn.'},
+    {t:'Nới dây phanh', d:'Bóp hai càng phanh vào nhau, tháo đầu dây ra khỏi ngàm cho rộng chỗ.'},
+    {t:'Tháo má cũ, lắp má mới', d:'Nới ốc lục giác, rút má cũ. Lắp má mới đúng chiều mũi tên quay tới.'},
+    {t:'Canh má cách vành 1 mm', d:'Mặt má áp đều vào vành, mép trên cách mép vành 1 mm, hơi chụm mũi về phía trước.'},
+    {t:'Siết ốc và thử', d:'Siết chặt, bóp phanh vài lần rồi thử chạy chậm. Phanh phải ăn khi bóp được nửa tay.'}
+  ],
+  warns:[{t:'Dính dầu vào má phanh là bỏ', d:'Má phanh dính dầu mỡ thì trượt, chùi cách nào cũng không hết. Đừng bôi trơn gần má.'}],
+  loi:['Lắp má cao chạm lốp: mài thủng lốp sau vài cây số.','Quên siết lại ốc sau khi canh — má xoay ra khi phanh gấp.'],
+  bien:['Phanh đĩa: thay theo bộ, bóp piston về vị trí bằng dụng cụ hoặc cán tua vít bọc vải.']
+},
+{
+  id:'khoakeo', name:'Chữa khoá kéo bị tuột, bị kẹt', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'Áo khoác, ba lô, vali hỏng khoá thường bị vứt đi oan. 90% ca chỉ cần bóp lại con chạy.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kìm mũi nhọn','Kim khâu','Bút chì'],
+  skills:['khau','oc'],
+  mats:[
+    {n:'Con chạy khoá kéo thay thế', q:'1 bộ vài cỡ', p:25000, mua:'cho', note:'xem số in trên con chạy cũ (3, 5, 8...) để mua đúng cỡ'},
+    {n:'Chỉ bền + kim', q:'1 bộ', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Xác định hỏng ở đâu', d:'Kéo lên mà răng không ăn khớp là con chạy rộng. Răng khoá gãy hoặc thiếu là phải thay cả dây.'},
+    {t:'Kẹt thì bôi trơn bằng bút chì', d:'Chà ruột bút chì lên răng khoá hai bên, kéo lên xuống vài lần. Không dùng dầu, dầu bám bụi.'},
+    {t:'Bóp con chạy', d:'Kìm mũi nhọn bóp nhẹ hai má con chạy, mỗi bên một chút, thử kéo sau mỗi lần bóp. Bóp quá tay là kẹt cứng.'},
+    {t:'Thay con chạy nếu bóp không ăn', d:'Cắt chỉ chặn đầu trên, rút con chạy cũ ra, luồn con mới vào đúng chiều.'},
+    {t:'Khâu chặn đầu mới', d:'Khâu 6–8 mũi ngang qua răng khoá ở đầu trên làm chốt chặn, thay cho chốt kim loại đã tháo.'}
+  ],
+  loi:['Bóp con chạy hết cỡ một lần: kẹt cứng, kéo không nổi, phải cắt bỏ.','Quên khâu chốt chặn đầu trên — con chạy tuột hẳn ra ngoài.'],
+  bien:['Răng khoá gãy giữa dây: thay cả dây khoá, nhưng ra tiệm sửa quần áo rẻ hơn tự làm.']
+},
+{
+  id:'denpin', name:'Đèn cảm biến chạy pin cho cầu thang, tủ', cat:'Điện & mát', diff:1, hours:1,
+  blurb:'Không đi dây, không đục tường. Dán lên là chỗ tối nào cũng tự sáng khi có người đi qua.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Khăn cồn','Thước','Bút chì'],
+  skills:['dan','do'],
+  mats:[
+    {n:'Đèn LED cảm biến chuyển động chạy pin', q:'3 cái', p:180000, mua:'mang', note:'loại pin AAA, có nam châm hoặc băng dính sẵn'},
+    {n:'Pin AAA', q:'9 viên', p:45000, mua:'cho'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:15000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Chọn chỗ đặt', d:'Cầu thang: đặt ở bậc thứ 3 tính từ dưới và bậc thứ 3 từ trên. Tủ: đặt ở nóc, hắt xuống.'},
+    {t:'Thử trước khi dán', d:'Lắp pin, cầm tay đưa qua đưa lại ở đúng vị trí định dán, xem có bắt được người không.'},
+    {t:'Lau sạch mặt dán', d:'Lau cồn, chờ khô hẳn. Mặt bụi là băng dính chỉ bám được vài ngày.'},
+    {t:'Dán và canh góc', d:'Cảm biến hướng ra chỗ người đi qua, không hướng vào tường đối diện.'},
+    {t:'Đi thử ban đêm', d:'Tắt hết đèn, đi lên xuống một lượt. Chỗ nào còn tối thì thêm một đèn nữa.'}
+  ],
+  loi:['Dán quá cao: cảm biến chỉ bắt được đầu người, đi lom khom là không sáng.','Dùng pin cũ lẫn pin mới — đèn sáng yếu và chết pin nhanh.'],
+  bien:['Có ổ điện gần: dùng loại cắm điện kèm cảm biến, khỏi thay pin ba tháng một lần.']
+},
+{
+  id:'gomday', name:'Gom dây điện gầm bàn làm việc', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Cái bàn sạch sẽ hơn thấy rõ chỉ sau một buổi tối. Không mua gì đắt, chủ yếu là sắp lại cho có thứ tự.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kéo','Khăn cồn','Bút dạ'],
+  skills:['dan','do'],
+  mats:[
+    {n:'Máng nhựa luồn dây', q:'1 m', p:35000, mua:'dien'},
+    {n:'Dây rút nhựa', q:'1 gói 100 cái', p:20000, mua:'kimkhi'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:15000, mua:'kimkhi'},
+    {n:'Nhãn dán dây', q:'1 tờ', p:10000, mua:'cho', note:'băng giấy trắng viết bút dạ cũng được'}
+  ],
+  steps:[
+    {t:'Rút hết ra và phân loại', d:'Rút từng dây, dán nhãn tên thiết bị vào đầu dây ngay lúc rút. Đây là bước tiết kiệm nhiều thời gian nhất về sau.'},
+    {t:'Bỏ dây thừa', d:'Dây của thiết bị đã bán, đã hỏng — bỏ hẳn ra khỏi hộp. Đừng cuộn lại cất vào gầm bàn.'},
+    {t:'Gắn ổ cắm lên gầm bàn', d:'Lau sạch mặt gỗ, dán băng dính 2 mặt xốp, ép ổ cắm lên. Ổ rời khỏi sàn là hết bụi và nước.'},
+    {t:'Luồn dây vào máng', d:'Đi dây theo cạnh bàn, cắt máng vừa chiều dài, dán lên.'},
+    {t:'Bó phần dây thừa', d:'Cuộn tròn phần thừa, buộc dây rút, treo dưới gầm bàn. Đừng cuộn quá chặt sát đầu cắm.'}
+  ],
+  loi:['Buộc dây rút quá chặt: dây sạc gãy ngầm ở chỗ buộc sau vài tháng.','Không dán nhãn — lần sau muốn rút một thiết bị lại phải mò cả bó.'],
+  bien:['Bàn hay kê lại: dùng khoá dán velcro thay dây rút, tháo ra buộc lại thoải mái.']
+},
+{
+  id:'gianphoi', name:'Giàn phơi gấp cho ban công nhỏ', cat:'Nội thất', diff:3, hours:4,
+  blurb:'Khung gỗ gấp áp tường, mở ra phơi được hai sào, gấp lại dày 6 cm. Hợp ban công chung cư chật.',
+  flags:{onao:3,bui:2,chungcu:false},
+  tools:['Khoan búa','Cưa tay','Ni-vô','Tua vít','Thước'],
+  skills:['do','cua','khoan','oc'],
+  mats:[
+    {n:'Thanh gỗ 4 × 4 cm', q:'3 m', p:120000, mua:'go'},
+    {n:'Ống inox Ø25 mm', q:'2 thanh 1,2 m', p:140000, mua:'kimkhi'},
+    {n:'Bản lề lá 3 inch', q:'4 cái', p:60000, mua:'kimkhi'},
+    {n:'Vít nở 8 mm', q:'6 bộ', p:25000, mua:'kimkhi'},
+    {n:'Móc gấp và chốt hãm', q:'2 bộ', p:50000, mua:'kimkhi'},
+    {n:'Sơn chống gỉ / dầu gỗ ngoài trời', q:'250 ml', p:85000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Đo ban công, chốt kích thước', d:'Đo chiều rộng lọt lòng, trừ mỗi bên 5 cm. Chiều vươn ra không quá 60 cm nếu không muốn vướng lối đi.'},
+    {t:'Cắt gỗ và làm khung chữ nhật', d:'Hai thanh dọc, hai thanh ngang, bắt vít góc. Kiểm tra hai đường chéo bằng nhau rồi mới siết.'},
+    {t:'Khoan lỗ đặt sào', d:'Khoan xuyên hai thanh dọc, cách nhau 25 cm, luồn ống inox qua rồi chốt lại.'},
+    {t:'Sơn hoặc lau dầu ngoài trời', d:'Ban công dính mưa nắng, không sơn thì một mùa mưa là mục. Sơn 2 lớp, chờ khô hẳn.'},
+    {t:'Bắt bản lề lên tường', d:'Dò dây điện, khoan, đóng nở 8 mm. Bắt bản lề ở độ cao ngang vai để phơi khỏi với.'},
+    {t:'Lắp chốt hãm và thử tải', d:'Chốt giữ khung ở góc mở 90°. Treo thử 6 kg quần áo ướt, để 30 phút xem tường có rạn không.'}
+  ],
+  warns:[{t:'Không lắp lên tường gạch nhẹ hoặc thạch cao', d:'Quần áo ướt nặng 8–10 kg, cộng lực đòn bẩy khi vươn ra. Tường không đặc thì cả giàn bung ra rơi xuống dưới.'},
+         {t:'Ban công tầng cao: mọi thứ rơi đều nguy hiểm chết người', d:'Chốt hãm phải là chốt kim loại có khoá, không dùng dây buộc tạm.'}],
+  loi:['Không kiểm hai đường chéo: khung vênh, gấp vào không sát tường.','Dùng vít nở nhựa 6 mm cho tải nặng — nở tuột dần theo từng lần phơi.'],
+  bien:['Không được khoan tường: làm giàn đứng chống trần kiểu thanh căng, tải nhẹ hơn nhưng không phải đục.']
+},
+{
+  id:'bonrau', name:'Bồn rau thùng xốp ban công', cat:'Cây cối', diff:2, hours:2,
+  blurb:'Ba thùng xốp là đủ rau ăn lá cho hai người. Điểm khác biệt duy nhất so với trồng hỏng: thoát nước và đất.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Dao rọc giấy','Xẻng nhỏ','Bình tưới'],
+  skills:['cat','do'],
+  mats:[
+    {n:'Thùng xốp có nắp', q:'3 cái', p:90000, mua:'cho', note:'xin ở hàng hoa quả thường được cho không'},
+    {n:'Đất sạch trồng rau', q:'20 kg', p:120000, mua:'cho'},
+    {n:'Phân trùn quế', q:'5 kg', p:60000, mua:'mang'},
+    {n:'Hạt giống rau ăn lá', q:'3 gói', p:30000, mua:'cho', note:'cải ngọt, xà lách, rau muống là dễ nhất'},
+    {n:'Lưới chắn côn trùng', q:'2 m', p:40000, mua:'mang'}
+  ],
+  steps:[
+    {t:'Khoét lỗ thoát nước', d:'Khoét 6 lỗ Ø1 cm ở thành thùng, cách đáy 3 cm — không khoét ở đáy. Chừa 3 cm nước dưới đáy làm hồ dự trữ.'},
+    {t:'Lót đáy bằng nắp thùng cắt nhỏ', d:'Bẻ vụn nắp xốp rải một lớp 3 cm dưới đáy cho thoáng, rễ không úng.'},
+    {t:'Trộn đất', d:'7 phần đất sạch, 3 phần phân trùn quế, trộn đều, đổ đầy cách miệng 5 cm.'},
+    {t:'Gieo hạt', d:'Gieo thưa, phủ một lớp đất mỏng bằng đúng đường kính hạt. Gieo dày là mọc lên tranh nhau rồi chết cả đám.'},
+    {t:'Che lưới 10 ngày đầu', d:'Lưới chắn bướm đẻ trứng và chắn mưa xối. Tưới đẫm buổi sáng, chiều tưới nhẹ nếu nắng gắt.'},
+    {t:'Tỉa bớt khi cây 3 lá', d:'Nhổ bớt cho mỗi cây cách nhau 10 cm. Cây nhổ ra ăn được luôn.'}
+  ],
+  loi:['Khoét lỗ thoát ở đáy thùng: nước chảy hết, ngày nắng phải tưới ba lần.','Dùng đất vườn lấy dưới quê: nén chặt, thoát nước kém, mang theo cả sâu.'],
+  bien:['Ban công nắng gắt cả ngày: kê thùng cách sàn 5 cm và che lưới đen 50% buổi trưa.']
+},
+{
+  id:'remcua', name:'Rèm cửa may một mảnh', cat:'May vá', diff:2, hours:3,
+  blurb:'Rèm may sẵn thường không vừa cửa nhà mình. Tự may một mảnh, đúng khổ, đúng màu, rẻ hơn một nửa.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Thước dây','Kéo cắt vải','Kim khâu hoặc máy khâu','Bàn là','Phấn vẽ vải'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Vải rèm khổ 1,5 m', q:'theo số đo', p:180000, mua:'vai', note:'vải bố hoặc vải gấm; muốn tối phòng thì chọn loại có lớp chắn sáng'},
+    {n:'Dây đai xếp ly', q:'theo chiều rộng', p:45000, mua:'vai'},
+    {n:'Móc rèm', q:'1 bộ', p:35000, mua:'vai'},
+    {n:'Chỉ cùng màu', q:'1 cuộn', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Đo cửa', d:'Chiều rộng vải = chiều rộng thanh treo × 2 (để rèm có nếp). Chiều dài = từ thanh treo tới sàn, trừ 1 cm cho khỏi quét đất.'},
+    {t:'Cắt vải, chừa mép', d:'Chừa 5 cm mỗi cạnh bên, 15 cm cho gấu dưới, 8 cm cho mép trên.'},
+    {t:'Gấp và là mép hai bên', d:'Gấp hai lần 2,5 cm, là chết nếp, khâu một đường dọc.'},
+    {t:'Làm gấu dưới', d:'Gấp 7,5 cm hai lần, là, khâu. Gấu dày làm rèm rủ thẳng, không phất phơ.'},
+    {t:'Khâu dây đai xếp ly lên mép trên', d:'Gấp mép trên 4 cm, ốp dây đai lên mặt trái, khâu hai đường trên và dưới dây.'},
+    {t:'Rút ly và treo thử', d:'Kéo dây rút cho ly xếp đều tới đúng chiều rộng thanh, buộc chặt, cài móc cách nhau 8 cm rồi treo lên.'}
+  ],
+  loi:['Đo chiều rộng bằng đúng thanh treo: rèm kéo ra căng phẳng như tấm bạt, không có nếp.','Khâu gấu trước khi treo thử — rèm dài chấm sàn hoặc ngắn hụt, tháo ra làm lại.'],
+  bien:['Không muốn xếp ly: dùng vòng khoen ore, đục 8–10 khoen cách đều, nếp rèm to và hiện đại hơn.']
+},
+{
+  id:'neptruot', name:'Dán nẹp chống trượt cầu thang', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'Cầu thang gạch bóng là chỗ ngã nguy hiểm nhất trong nhà, nhất là với người già và trẻ con. Một buổi chiều là xong cả thang.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Thước','Kéo cắt khoẻ','Khăn cồn','Con lăn hoặc giẻ khô'],
+  skills:['do','dan'],
+  mats:[
+    {n:'Băng nhám chống trượt bản 5 cm', q:'10 m', p:120000, mua:'mang', note:'đo số bậc × chiều rộng bậc rồi cộng thêm 10%'},
+    {n:'Cồn lau', q:'200 ml', p:20000, mua:'cho'},
+    {n:'Keo dán viền (nếu bậc gồ ghề)', q:'1 tuýp', p:35000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Đo và cắt sẵn từng dải', d:'Cắt ngắn hơn chiều rộng bậc mỗi bên 2 cm cho gọn mắt. Cắt hết một lượt rồi mới dán.'},
+    {t:'Lau sạch và chờ khô', d:'Lau cồn kỹ mép bậc, chờ khô hẳn 10 phút. Bậc còn ẩm hay còn sáp lau nhà là băng bong trong tuần.'},
+    {t:'Dán cách mép bậc 2 cm', d:'Dán sát mép quá thì mũi chân đạp lên phần rìa, băng cuốn lên. Cách 2 cm là vừa.'},
+    {t:'Miết thật kỹ', d:'Lăn hoặc miết bằng giẻ khô 30 giây mỗi dải, đặc biệt là hai đầu.'},
+    {t:'Chờ 24 giờ mới đi nhiều', d:'Keo cần một ngày để ăn hết. Đêm đầu tiên hạn chế đi lại.'}
+  ],
+  loi:['Dán khi sàn còn ẩm sau lau nhà: bong hết sau 3–4 ngày.','Dán trùm ra mép bậc: mũi giày móc vào, còn trơn hơn lúc chưa dán.'],
+  bien:['Bậc gỗ đẹp tiếc không muốn dán băng nhám: dùng nẹp nhôm có rãnh cao su, bắt vít, tháo được.']
+},
+{
+  id:'thaydau', name:'Thay nhớt xe máy tại nhà', cat:'Xe cộ', diff:2, hours:1,
+  blurb:'Việc 25 phút, tiết kiệm tiền công và quan trọng hơn là biết chắc mình đổ đúng loại nhớt, đúng lượng.',
+  flags:{onao:1,bui:2,chungcu:false},
+  tools:['Khẩu 17 hoặc tuýp đúng cỡ ốc xả','Khay hứng','Phễu','Găng tay','Giẻ lau'],
+  skills:['oc','do'],
+  mats:[
+    {n:'Nhớt xe máy', q:'1 lít (xe số) hoặc theo sách xe', p:110000, mua:'xe', note:'xem đúng cấp nhớt ghi trong sách xe, ví dụ 10W-40 JASO MA2'},
+    {n:'Gioăng ốc xả', q:'1 cái', p:5000, mua:'xe', note:'nhiều người bỏ qua — đây là chỗ rỉ nhớt phổ biến nhất'},
+    {n:'Khay hứng và can đựng nhớt thải', q:'1 bộ', p:60000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Nổ máy 2 phút cho nhớt loãng', d:'Nhớt ấm chảy hết cặn ra theo. Nhưng đừng để máy nóng già, bỏng tay.'},
+    {t:'Dựng chân chống giữa', d:'Xe phải đứng thẳng thì nhớt cũ mới ra hết và đo mức nhớt mới mới đúng.'},
+    {t:'Mở ốc xả, chờ chảy hết', d:'Đặt khay bên dưới, mở ốc xả ở đáy máy. Chờ 5 phút, tới khi chỉ còn nhỏ giọt.'},
+    {t:'Thay gioăng, siết ốc xả', d:'Lắp gioăng mới, siết vừa tay chắc. Siết quá tay là toét ren lốc máy — sửa rất đắt.'},
+    {t:'Đổ nhớt mới qua phễu', d:'Đúng lượng ghi trong sách xe (thường 0,8–1 lít). Đổ nhiều hơn không tốt hơn, còn hại máy.'},
+    {t:'Nổ máy, kiểm tra rỉ', d:'Nổ 1 phút, tắt máy, chờ 2 phút rồi xem que thăm và nhìn quanh ốc xả xem có rỉ không.'}
+  ],
+  warns:[{t:'Nhớt thải không đổ xuống cống', d:'Một lít nhớt thải làm ô nhiễm rất nhiều nước. Đựng vào can, mang ra tiệm sửa xe — họ thu lại miễn phí.'},
+         {t:'Siết ốc xả quá tay là hỏng lốc máy', d:'Ren nhôm của lốc máy rất mềm. Siết chắc tay là đủ, đừng lấy ống nối dài.'}],
+  loi:['Mở nhầm ốc xả nhớt lốc côn (xe tay ga) thay vì ốc xả nhớt máy.','Đổ nhớt ô tô vào xe số có côn ướt: côn trượt, xe ì.'],
+  bien:['Xe tay ga: nhớt láp thay mỗi 3 lần thay nhớt máy, dung tích chỉ khoảng 100 ml.']
 }
 ];
+/* == /DATA:PROJECTS == */
 const byId = id => PROJECTS.find(p=>p.id===id);
 const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
 
@@ -703,6 +1032,14 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
             <h3>Dụng cụ cần có</h3>
             {p.tools.map((t,i)=><p key={i} className="muted" style={{marginTop:6}}>· {t}</p>)}
           </div>
+          {p.loi && !!p.loi.length && <div className="card">
+            <h3>Lỗi hay gặp</h3>
+            {p.loi.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>✕ {t}</p>)}
+          </div>}
+          {p.bien && !!p.bien.length && <div className="card">
+            <h3>Làm khác đi</h3>
+            {p.bien.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>→ {t}</p>)}
+          </div>}
           {p.warns && p.warns.map((w,i)=>
             <div key={i} className="warnbox"><h4>{w.t}</h4><p>{w.d}</p></div>)}
         </>}
