@@ -41,9 +41,10 @@ Ranh giới an toàn: **không gọt, không khoan một milimét nào vào lớ
 
 ## Kỹ thuật
 
-- Một file `index.html`, React 18 + Babel standalone nạp qua CDN jsDelivr — không có
-  bước build, không cần Node. Kèm `sw.js`, `manifest.webmanifest` và hai icon để cài
-  lên màn hình chính; ba file này chỉ có tác dụng khi mở qua http/https.
+- Mã nguồn ở `nguon/app.jsx` (JSX) và `nguon/khung.html` (phần HTML bao quanh); bản
+  chạy `index.html` được dịch sẵn trên máy, không dịch trong trình duyệt. React 18 nạp
+  qua CDN jsDelivr. Kèm `sw.js`, `manifest.webmanifest` và hai icon để cài lên màn hình
+  chính; ba file này chỉ có tác dụng khi mở qua http/https.
 - Dữ liệu ở `localStorage`, khoá `diy.*` (doing · shop · gallery · body · kho · theme).
   Không máy chủ, không gửi đi đâu. **Xoá lịch sử trình duyệt là mất sạch** — trong tab
   Tôi có nút sao lưu ra file JSON và phục hồi lại.
@@ -54,10 +55,15 @@ Ranh giới an toàn: **không gọt, không khoan một milimét nào vào lớ
 
 ## Sửa
 
-Dữ liệu nằm ở ba khối đánh dấu trong `index.html`: `DATA:PROJECTS`, `DATA:KYNANG`,
+**Sửa `nguon/app.jsx`, không sửa `index.html`** — `index.html` là bản dựng sinh tự
+động, sửa thẳng vào đó thì lần dựng sau bị chặn. Dựng lại bằng:
+
+    python3 /Users/Huy/Claude/HeThong/dungapp/dung.py /Users/Huy/Claude/App/XuongNha
+
+Dữ liệu nằm ở ba khối đánh dấu trong `nguon/app.jsx`: `DATA:PROJECTS`, `DATA:KYNANG`,
 `DATA:DUNGCU`. Thêm một dự án là thêm một phần tử vào `PROJECTS` — dụng cụ, chỉ mục vật
 liệu, bộ lọc và thống kê tự ăn theo, không phải sửa giao diện.
 
-Babel biên dịch ngay trên trình duyệt nên **một lỗi cú pháp là trắng màn hình**: mở lại
-và xem Console (F12) sau mỗi lần sửa. Sửa `index.html` xong nhớ tăng số `KHO` trong
-`sw.js`, không thì máy đã cài vẫn chạy bản cũ trong kho.
+Lỗi cú pháp bị bắt ngay lúc dựng chứ không còn ra trắng màn hình trên máy người dùng.
+Dựng lại xong nhớ tăng số `KHO` trong `sw.js`, không thì máy đã cài vẫn chạy bản cũ
+trong kho.

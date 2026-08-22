@@ -1,0 +1,18 @@
+# Bản lưu trước khi chuyển sang dịch sẵn mã (dungapp/dung.py)
+*.truoc-khi-dich.bak
+index.html.bak
+
+# File phụ trợ dev cục bộ — không cần đăng
+.claude/launch.json
+.claude/settings.local.json
+.preview-server.js
+
+# Hệ điều hành / editor
+.DS_Store
+Thumbs.db
+node_modules/
+.vscode/
+
+# Sao lưu dữ liệu cá nhân xuất từ tab Tôi (KHÔNG đăng lên repo công khai)
+xuongnha-backup-*.json
+*-backup-*.json
