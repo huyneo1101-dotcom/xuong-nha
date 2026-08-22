@@ -10,13 +10,13 @@ Cài lên màn hình chính điện thoại được, mất mạng vẫn mở đ
 
 | Tab | Việc |
 |---|---|
-| **Dự án** | 24 dự án · 9 kỹ năng nền · 84 loại vật liệu — ba lớp tra cứu, lọc và sắp xếp |
+| **Dự án** | 24 dự án · 9 kỹ năng nền · 84 loại vật liệu — ba lớp tra cứu, lọc và sắp xếp, đánh dấu yêu thích |
 | **Hôm nay** | thẻ Làm tiếp (vào thẳng chế độ làm), dự án dở, dự án đã xong, ba gợi ý đổi theo ngày |
 | **Đi chợ** | vật liệu gom theo **nơi mua**, tick đã mua, cộng tiền, chép danh sách gửi Zalo |
 | **Thành phẩm** | ảnh trước/sau, ghi chú, số sao, thời gian thật đã bỏ ra |
 | **Tôi** | kho dụng cụ, số đo đầu, thống kê, sao lưu/phục hồi, giao diện sáng-tối |
 
-## Ba thứ làm nên app này
+## Bốn thứ làm nên app này
 
 **Chế độ làm.** Đang dính keo đầy tay thì không cuộn nổi danh sách tám bước. Bấm "Vào
 chế độ làm" là mỗi lần một bước chiếm cả màn hình: chữ to, hình vẽ của đúng bước đó, ô
@@ -25,6 +25,12 @@ ghi chú, ba nút to ở đáy, đồng hồ đếm từ lúc bắt đầu.
 **Kho dụng cụ.** Tick những món đã có trong nhà, app sẽ nói thẳng dự án nào còn thiếu
 gì và lọc ra những dự án làm được ngay. Dụng cụ mỗi dự án suy ra từ kỹ năng nó dùng,
 không khai tay hai chỗ.
+
+**Yêu thích, ẩn, xoá.** Nút ngôi sao trên mỗi thẻ dự án; dự án yêu thích luôn đứng đầu thư
+viện và đứng đầu gợi ý ở tab Hôm nay. Trong một dự án, mục "Dự án này" cho **ẩn** (biến khỏi
+thư viện và gợi ý, tiến độ giữ nguyên, bật lại bằng chip lọc hoặc ở tab Tôi) và **xoá** (biến
+khỏi mọi nơi, xoá luôn tiến độ các bước và các món đã tick mua của riêng dự án đó; ảnh thành
+phẩm giữ nguyên). Dự án đã xoá khôi phục lại được ở tab Tôi, nhưng tiến độ thì không.
 
 **Tra ngược từ vật liệu.** Câu hỏi thật của người tự làm thường không phải "làm gì bây
 giờ" mà "còn thừa khúc ống PVC này thì làm được món nào". Lớp Vật liệu trả lời đúng câu đó.
@@ -45,7 +51,8 @@ Ranh giới an toàn: **không gọt, không khoan một milimét nào vào lớ
   chạy `index.html` được dịch sẵn trên máy, không dịch trong trình duyệt. React 18 nạp
   qua CDN jsDelivr. Kèm `sw.js`, `manifest.webmanifest` và hai icon để cài lên màn hình
   chính; ba file này chỉ có tác dụng khi mở qua http/https.
-- Dữ liệu ở `localStorage`, khoá `diy.*` (doing · shop · gallery · body · kho · theme).
+- Dữ liệu ở `localStorage`, khoá `diy.*` (doing · shop · gallery · body · kho · theme ·
+  fav · an · xoa).
   Không máy chủ, không gửi đi đâu. **Xoá lịch sử trình duyệt là mất sạch** — trong tab
   Tôi có nút sao lưu ra file JSON và phục hồi lại.
 - Ảnh thành phẩm nén còn cạnh dài 900 px, JPEG 0,72 trước khi lưu.

@@ -2,7 +2,7 @@
    Mục đích: mở được app khi mất mạng, kể cả hai thư viện nạp từ jsDelivr.
    Chiến lược: đọc từ kho trước rồi âm thầm làm mới (stale-while-revalidate).
    Tăng KHO mỗi lần đổi index.html để bản cũ bị dọn đi. */
-const KHO = 'xuongnha-v3';
+const KHO = 'xuongnha-v4';
 const VON = [
   './',
   './index.html',

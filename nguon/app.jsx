@@ -11,7 +11,7 @@ const store = (()=>{ let ok=true, mem={};
   };
 })();
 const K = {doing:'diy.doing', shop:'diy.shop', gal:'diy.gallery', body:'diy.body',
-           theme:'diy.theme', kho:'diy.kho'};
+           theme:'diy.theme', kho:'diy.kho', fav:'diy.fav', an:'diy.an', xoa:'diy.xoa'};
 
 /* ---------------------------------------------------------------- tien ich */
 const vnd = n => n>=1000 ? (n/1000).toLocaleString('vi-VN',{maximumFractionDigits:0})+'k' : n+'đ';
@@ -934,7 +934,7 @@ const byId = id => PROJECTS.find(p=>p.id===id);
 const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
 
 /* ---------------------------------------------------------------- icon */
-const Ico = ({d}) => <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{__html:d}}/>;
+const Ico = ({d,cl}) => <svg className={cl} viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{__html:d}}/>;
 /* ô tick dùng được bằng bàn phím và đọc được bằng trình đọc màn hình */
 const Tick = ({on,onClick,label}) => (
   <div className={'tick'+(on?' on':'')} onClick={onClick} role="checkbox" tabIndex={0}
@@ -949,7 +949,8 @@ const ICONS = {
   shop:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H3"/>',
   gal:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 5"/>',
   me:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
-  check:'<path d="m4 12 5 5L20 6"/>'
+  check:'<path d="m4 12 5 5L20 6"/>',
+  sao:'<path d="M12 3.4 14.7 9.1 21 10l-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 10l6.3-.9z"/>'
 };
 
 /* ---------------------------------------------------------------- App */
@@ -968,6 +969,25 @@ function App(){
   });
   const [kho,setKhoS]     = useState(()=>store.get(K.kho,[]));
   const setKho = v => { setKhoS(v); store.set(K.kho,v); };
+  const [fav,setFavS]     = useState(()=>store.get(K.fav,[]));
+  const [an,setAnS]       = useState(()=>store.get(K.an,[]));
+  const [xoa,setXoaS]     = useState(()=>store.get(K.xoa,[]));
+  const setFav = v => { setFavS(v); store.set(K.fav,v); };
+  const setAn  = v => { setAnS(v);  store.set(K.an,v);  };
+  const setXoa = v => { setXoaS(v); store.set(K.xoa,v); };
+  const togFav = id => setFav(fav.includes(id) ? fav.filter(x=>x!==id) : fav.concat(id));
+  const togAn  = id => setAn(an.includes(id)   ? an.filter(x=>x!==id)  : an.concat(id));
+  /* xoa = bo khoi app va don sach tien do cua rieng du an do; anh thanh pham giu nguyen */
+  const xoaDA = id => {
+    if(!xoa.includes(id)) setXoa(xoa.concat(id));
+    if(fav.includes(id)) setFav(fav.filter(x=>x!==id));
+    if(an.includes(id))  setAn(an.filter(x=>x!==id));
+    if(doing[id]){ const d={...doing}; delete d[id]; setDoing(d); }
+    const s={...shop}; let doi=false;
+    Object.keys(s).forEach(k=>{ if(k.split('::')[0]===id){ delete s[k]; doi=true; } });
+    if(doi) setShop(s);
+  };
+  const phucHoi = id => setXoa(xoa.filter(x=>x!==id));
 
   const setDoing = v => { setDoingS(v); store.set(K.doing,v); };
   const setShop  = v => { setShopS(v);  store.set(K.shop,v); };
@@ -986,6 +1006,7 @@ function App(){
   const [lamNgay,setLamNgay] = useState(false);
   const openLam = id => { start(id); setOpen(id); setLamNgay(true); };
   const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,kho,setKho,
+                  fav,togFav,an,togAn,xoa,xoaDA,phucHoi,
                   open:setOpen,openKy:setOpenKy,openLam,start};
 
   const TABS = [['lib','Dự án',ICONS.lib],['doing','Đang làm',ICONS.doing],
@@ -1027,15 +1048,16 @@ function Thumb({p}){
 
 const thieuDC = (p,kho) => dcOf(p).filter(id=>!(kho||[]).includes(id));
 
-function PCard({p,onClick,prog,kho,viSao}){
+function PCard({p,onClick,prog,kho,viSao,fav,onFav,an}){
   const thieu = kho ? thieuDC(p,kho) : [];
   return (
     <div className="card pcard" onClick={onClick}>
       <Thumb p={p}/>
       <div style={{flex:1,minWidth:0}}>
-        <h3>{p.name}</h3>
+        <h3 style={onFav?{paddingRight:34}:null}>{p.name}</h3>
         <p className="muted" style={{marginTop:3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{p.blurb}</p>
         <div className="meta">
+          {an && <span className="chip warn">đang ẩn</span>}
           <span className="chip">{p.cat}</span>
           <span className="chip">{DIFF[p.diff]}</span>
           <span className="chip">{gio(p.hours)}</span>
@@ -1049,18 +1071,24 @@ function PCard({p,onClick,prog,kho,viSao}){
         {viSao && <p className="tiny" style={{marginTop:6,color:'var(--acc)'}}>khớp {viSao}</p>}
         {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
       </div>
+      {onFav && <button className={'star'+(fav?' on':'')} aria-pressed={!!fav}
+        aria-label={(fav?'Bỏ yêu thích ':'Yêu thích ')+p.name}
+        onClick={e=>{ e.stopPropagation(); onFav(); }}><Ico d={ICONS.sao}/></button>}
     </div>
   );
 }
 
-function Library({open,openKy,doing,kho}){
+function Library({open,openKy,doing,kho,fav,togFav,an,togAn,xoa}){
   const [mode,setMode] = useState('du');
   const [cat,setCat] = useState('all');
   const [q,setQ] = useState('');
   const [sort,setSort] = useState('mac');
   const [flt,setFlt] = useState([]);
   const tog = f => setFlt(flt.includes(f) ? flt.filter(x=>x!==f) : flt.concat(f));
+  const song = PROJECTS.filter(p=>!xoa.includes(p.id));   /* chưa xoá */
+  const hien = song.filter(p=>!an.includes(p.id));        /* chưa xoá, chưa ẩn */
   const hop = p =>
+    (!flt.includes('sao')   || fav.includes(p.id)) &&
     (!flt.includes('nhanh') || p.hours<=1) &&
     (!flt.includes('re')    || projCost(p)<=100000) &&
     (!flt.includes('de')    || p.diff===1) &&
@@ -1068,23 +1096,23 @@ function Library({open,openKy,doing,kho}){
     (!flt.includes('dc')    || !thieuDC(p,kho).length);
   const SORTS = {mac:()=>0, de:(a,b)=>a.diff-b.diff||a.hours-b.hours,
                  re:(a,b)=>projCost(a)-projCost(b), nhanh:(a,b)=>a.hours-b.hours};
-  const list = PROJECTS.filter(p =>
+  const list = (flt.includes('an') ? song : hien).filter(p =>
     (cat==='all'||p.cat===cat) && hop(p) &&
     (!q || (p.name+' '+p.blurb+' '+p.cat+' '+p.mats.map(m=>m.n).join(' ')+' '+p.tools.join(' ')).toLowerCase().includes(q.toLowerCase())))
-    .slice().sort(SORTS[sort]);
+    .slice().sort((a,b)=> (fav.includes(b.id)?1:0)-(fav.includes(a.id)?1:0) || SORTS[sort](a,b));
   const kyList = KYNANG.filter(k =>
     !q || (k.ten+' '+k.tomtat+' '+k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
 
   /* chỉ mục vật liệu: gom theo tên, đếm số dự án dùng tới */
   const vlIndex = useMemo(()=>{
     const m = {};
-    PROJECTS.forEach(p=> p.mats.forEach(x=>{
+    song.forEach(p=> p.mats.forEach(x=>{
       const k = x.n.trim();
       if(!m[k]) m[k] = {n:k, mua:x.mua||'cho', p:x.p, du:[]};
       if(!m[k].du.includes(p.id)) m[k].du.push(p.id);
     }));
     return Object.values(m).sort((a,b)=> b.du.length-a.du.length || a.n.localeCompare(b.n,'vi'));
-  },[]);
+  },[xoa]);
   const vlList = vlIndex.filter(v => !q || v.n.toLowerCase().includes(q.toLowerCase()));
   const vlNhom = {};
   vlList.forEach(v=> (vlNhom[v.mua]=vlNhom[v.mua]||[]).push(v));
@@ -1107,7 +1135,8 @@ function Library({open,openKy,doing,kho}){
     <div>
       <div className="hd">
         <h1>Xưởng Nhà</h1>
-        <p>{mode==='du' ? PROJECTS.length+' dự án tự làm · vật liệu mua được ở Việt Nam'
+        <p>{mode==='du' ? hien.length+' dự án tự làm'+(fav.length?' · '+fav.length+' yêu thích':'')+
+                          (an.length?' · '+an.length+' đang ẩn':'')+(xoa.length?' · '+xoa.length+' đã xoá':'')
           : mode==='ky' ? KYNANG.length+' kỹ năng nền — đọc trước khi bắt tay vào làm'
                         : 'Còn thừa thứ gì trong nhà? Tìm xem làm được món nào'}</p>
         <div className="seg2">
@@ -1127,8 +1156,10 @@ function Library({open,openKy,doing,kho}){
         </div>
         {mode==='du' && <>
           <div className="fltrow">
-            {[['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']]
-              .concat(kho && kho.length ? [['dc','đủ dụng cụ tôi có']] : []).map(([k,l])=>
+            {(fav.length ? [['sao','★ yêu thích']] : [])
+              .concat([['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']])
+              .concat(kho && kho.length ? [['dc','đủ dụng cụ tôi có']] : [])
+              .concat(an.length ? [['an','hiện cả '+an.length+' dự án đã ẩn']] : []).map(([k,l])=>
               <button key={k} className={'fchip'+(flt.includes(k)?' on':'')} onClick={()=>tog(k)}>{l}</button>)}
             <select className="fsel" value={sort} onChange={e=>setSort(e.target.value)}>
               <option value="mac">Thứ tự mặc định</option>
@@ -1138,8 +1169,12 @@ function Library({open,openKy,doing,kho}){
             </select>
           </div>
           <p className="tiny" style={{margin:'10px 2px 0'}}>{list.length} dự án</p>
-          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} viSao={viSao(p)} onClick={()=>open(p.id)}/>)}
-          {!list.length && <div className="empty">Không có dự án nào khớp.<br/>Bỏ bớt một bộ lọc thử xem.</div>}
+          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} viSao={viSao(p)}
+                              fav={fav.includes(p.id)} onFav={()=>togFav(p.id)} an={an.includes(p.id)}
+                              onClick={()=>open(p.id)}/>)}
+          {!list.length && <div className="empty">Không có dự án nào khớp.<br/>
+            {an.length && !flt.includes('an') ? 'Còn '+an.length+' dự án đang ẩn — bấm chip "hiện cả … đã ẩn" ở trên.'
+                                              : 'Bỏ bớt một bộ lọc thử xem.'}</div>}
         </>}
         {mode==='ky' && <>
           {kyList.map(k=>(
@@ -1150,7 +1185,7 @@ function Library({open,openKy,doing,kho}){
                 <p className="muted" style={{marginTop:3}}>{k.tomtat}</p>
                 <div className="meta">
                   <span className="chip">{k.buoc.length} điều cốt lõi</span>
-                  <span className="chip">{PROJECTS.filter(p=>(p.skills||[]).includes(k.id)).length} dự án dùng</span>
+                  <span className="chip">{song.filter(p=>(p.skills||[]).includes(k.id)).length} dự án dùng</span>
                 </div>
               </div>
             </div>))}
@@ -1280,7 +1315,8 @@ function SkillView({id,close,open}){
 }
 
 /* ---------------------------------------------------------------- chi tiet du an */
-function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy,lamNgay,clearLam,kho}){
+function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy,lamNgay,clearLam,kho,
+                      fav,togFav,an,togAn,xoa,xoaDA,phucHoi}){
   const p = byId(id);
   const thieu = thieuDC(p,kho);
   const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
@@ -1297,6 +1333,7 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
   const pct = Math.round(doneCount/p.steps.length*100);
   const segs = [['tq','Tổng quan'],['vl','Vật liệu'],['bw','Các bước']];
   if(p.hasDraw) segs.push(['bv','Bản vẽ']);
+  const laFav = (fav||[]).includes(id), laAn = (an||[]).includes(id), daXoa = (xoa||[]).includes(id);
 
   return (
     <div className="sheet">
@@ -1304,6 +1341,9 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
         <button className="back" onClick={close}>‹ Quay lại</button>
         <h1 style={{fontSize:18,fontWeight:600,lineHeight:1.3}}>{p.name}</h1>
         <div className="meta" style={{marginTop:7}}>
+          {daXoa && <span className="chip warn">đã xoá</span>}
+          {!daXoa && laAn && <span className="chip warn">đang ẩn</span>}
+          {laFav && <span className="chip acc">★ yêu thích</span>}
           <span className="chip">{p.cat}</span><span className="chip">{DIFF[p.diff]}</span>
           <span className="chip">{p.hours} giờ</span><span className="chip acc">{vnd(projCost(p))}</span>
         </div>
@@ -1347,6 +1387,32 @@ function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,sta
           </div>}
           {p.warns && p.warns.map((w,i)=>
             <div key={i} className="warnbox"><h4>{w.t}</h4><p>{w.d}</p></div>)}
+          <div className="card">
+            <h3>Dự án này</h3>
+            {daXoa
+              ? <>
+                  <p className="tiny" style={{marginTop:4,lineHeight:1.6}}>
+                    Đã xoá khỏi app. Khôi phục thì dự án quay lại thư viện, nhưng tiến độ các bước
+                    và các món đã tick mua thì không lấy lại được.</p>
+                  <button className="btn sm ghost" style={{marginTop:11}}
+                    onClick={()=>phucHoi(id)}>Khôi phục dự án</button>
+                </>
+              : <>
+                  <div className="row" style={{marginTop:11,flexWrap:'wrap'}}>
+                    <button className={'btn sm ghost'+(laFav?' fav':'')} aria-pressed={laFav}
+                      onClick={()=>togFav(id)}>
+                      <Ico cl="st" d={ICONS.sao}/>{laFav?'Đang yêu thích':'Yêu thích'}</button>
+                    <button className="btn sm ghost" onClick={()=>togAn(id)}>
+                      {laAn?'Bỏ ẩn':'Ẩn khỏi thư viện'}</button>
+                    <button className="btn sm ghost xoa" onClick={()=>{
+                      if(confirm('Xoá “'+p.name+'” khỏi app?\n\nMất luôn tiến độ các bước và các món đã tick mua của riêng dự án này. Ảnh thành phẩm vẫn giữ nguyên.\n\nKhôi phục dự án lại được ở tab Tôi, nhưng tiến độ thì không.')){
+                        xoaDA(id); close(); } }}>Xoá dự án</button>
+                  </div>
+                  <p className="tiny" style={{marginTop:10,lineHeight:1.6}}>
+                    {laAn ? 'Đang ẩn — không hiện ở thư viện và ở gợi ý nữa, tiến độ vẫn giữ nguyên. Bỏ ẩn lúc nào cũng được.'
+                          : 'Ẩn thì dự án biến khỏi thư viện và khỏi gợi ý, tiến độ vẫn còn. Xoá thì mất tiến độ.'}</p>
+                </>}
+          </div>
         </>}
 
         {seg==='vl' && <MatList p={p} shop={shop} setShop={setShop}/>}
@@ -1449,7 +1515,7 @@ function DomeDraw({dims,body,setBody}){
 }
 
 /* ---------------------------------------------------------------- dang lam */
-function Doing({doing,setDoing,open,openLam,gal}){
+function Doing({doing,setDoing,open,openLam,gal,fav,an,xoa}){
   const list = Object.keys(doing).map(id=>({id,p:byId(id),st:doing[id]})).filter(x=>x.p);
   const soXong = x => Object.values(x.st.steps||{}).filter(s=>s.done).length;
   const pct = x => Math.round(soXong(x)/x.p.steps.length*100);
@@ -1462,9 +1528,10 @@ function Doing({doing,setDoing,open,openLam,gal}){
     return {i:0,s:tiep.p.steps[0]}; })() : null;
 
   /* gợi ý: dự án chưa đụng tới, đổi theo ngày cho đỡ chán */
-  const chuaLam = PROJECTS.filter(p=>!doing[p.id]);
+  const chuaLam = PROJECTS.filter(p=>!doing[p.id] && !an.includes(p.id) && !xoa.includes(p.id));
   const mocNgay = parseInt(today().replace(/-/g,''),10) || 0;
   const goiY = chuaLam.slice().sort((a,b)=>
+    (fav.includes(b.id)?1:0)-(fav.includes(a.id)?1:0) ||
     ((a.id.length*7+mocNgay)%chuaLam.length) - ((b.id.length*7+mocNgay)%chuaLam.length)).slice(0,3);
 
   return (
@@ -1672,7 +1739,7 @@ function AnhO({label,url,onPick,onClear}){
   );
 }
 
-function Gallery({gal,setGal,doing,open}){
+function Gallery({gal,setGal,doing,open,xoa}){
   const [add,setAdd] = useState(false);
   const [xem,setXem] = useState(null);
   const [loc,setLoc] = useState('all');
@@ -1712,7 +1779,7 @@ function Gallery({gal,setGal,doing,open}){
               {Object.keys(doing).map(byId).filter(Boolean).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </optgroup>
             <optgroup label="Tất cả">
-              {PROJECTS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+              {PROJECTS.filter(p=>!xoa.includes(p.id)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
             </optgroup>
           </select>
 
@@ -1807,7 +1874,8 @@ function coCu(){ /* ước lượng chỗ đang chiếm, tính theo ký tự */
   return n;
 }
 
-function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
+function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho,
+             open,fav,togFav,an,togAn,xoa,xoaDA,phucHoi}){
   const togDC = id => setKho(kho.includes(id) ? kho.filter(x=>x!==id) : kho.concat(id));
   const thieuTien = DUNGCU.filter(d=>d.nen && !kho.includes(d.id)).reduce((s,d)=>s+d.p,0);
   const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
@@ -1831,6 +1899,35 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
           {gioThat>0 && <div className="kpi"><b>{String(gioThat).replace('.',',')} giờ</b><span>đã bỏ ra, theo ghi chép của Huy</span></div>}
           {kho.length>0 && <div className="kpi"><b>{kho.length}/{DUNGCU.length}</b><span>dụng cụ đã có trong nhà</span></div>}
         </div>
+        {!!(fav.length||an.length||xoa.length) && <div className="card">
+          <h3>Dự án đã đánh dấu</h3>
+          {!!fav.length && <>
+            <p className="secttl" style={{marginTop:9}}>★ YÊU THÍCH — {fav.length}</p>
+            {fav.map(byId).filter(Boolean).map(p=>(
+              <div className="qlrow" key={p.id}>
+                <b style={{flex:1,minWidth:0,fontSize:13.5,cursor:'pointer'}} onClick={()=>open(p.id)}>{p.name}</b>
+                <button className="btn sm ghost" onClick={()=>togFav(p.id)}>Bỏ yêu thích</button>
+              </div>))}
+          </>}
+          {!!an.length && <>
+            <p className="secttl" style={{marginTop:13}}>ĐANG ẨN — {an.length}</p>
+            <p className="tiny">Không hiện ở thư viện và ở gợi ý; tiến độ vẫn giữ nguyên.</p>
+            {an.map(byId).filter(Boolean).map(p=>(
+              <div className="qlrow" key={p.id}>
+                <b style={{flex:1,minWidth:0,fontSize:13.5,cursor:'pointer'}} onClick={()=>open(p.id)}>{p.name}</b>
+                <button className="btn sm ghost" onClick={()=>togAn(p.id)}>Bỏ ẩn</button>
+              </div>))}
+          </>}
+          {!!xoa.length && <>
+            <p className="secttl" style={{marginTop:13}}>ĐÃ XOÁ — {xoa.length}</p>
+            <p className="tiny">Khôi phục thì dự án quay lại thư viện, tiến độ cũ thì không.</p>
+            {xoa.map(byId).filter(Boolean).map(p=>(
+              <div className="qlrow" key={p.id}>
+                <b style={{flex:1,minWidth:0,fontSize:13.5,opacity:.6}}>{p.name}</b>
+                <button className="btn sm ghost" onClick={()=>phucHoi(p.id)}>Khôi phục</button>
+              </div>))}
+          </>}
+        </div>}
         <div className="card">
           <div className="between"><h3>Kho dụng cụ nhà mình</h3>
             <span className="tiny">{kho.length}/{DUNGCU.length}</span></div>
@@ -1907,7 +2004,7 @@ function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
           </div>
           <button className="btn ghost sm" style={{marginTop:11,color:'var(--bad)',borderColor:'var(--bad)'}} onClick={wipe}>Xoá toàn bộ dữ liệu</button>
         </div>
-        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà · {PROJECTS.length} dự án · {KYNANG.length} kỹ năng</p>
+        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà · {PROJECTS.length-xoa.length} dự án · {KYNANG.length} kỹ năng</p>
       </div>
     </div>
   );

@@ -54,7 +54,15 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
   animation:fadein .18s ease both}
 .card h3{font-size:15.5px;font-weight:600;letter-spacing:-.15px}
 .pcard:active{transform:scale(.987)}
-.card.pcard{transition:transform .12s ease}
+.card.pcard{transition:transform .12s ease;position:relative}
+.star{position:absolute;top:5px;right:5px;width:44px;height:44px;border-radius:99px;padding:0;
+  background:none;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .1s ease}
+.star svg{width:19px;height:19px;stroke:var(--tx3);fill:none;stroke-width:1.7;stroke-linejoin:round}
+.star.on svg{stroke:var(--acc);fill:var(--acc)}
+.star:active{transform:scale(.88)}
+.qlrow{display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.qlrow:last-child{border-bottom:none}
 .muted{color:var(--tx2);font-size:13px}
 .tiny{color:var(--tx3);font-size:12px}
 .row{display:flex;gap:10px;align-items:center}
@@ -65,6 +73,11 @@ body{background:var(--bg);color:var(--tx);font-family:"Segoe UI",system-ui,-appl
 .btn.ghost{background:transparent;color:var(--tx2);border:1px solid var(--line)}
 .btn.sm{width:auto;padding:7px 12px;font-size:13px;border-radius:10px}
 .btn:active{transform:scale(.99)}
+.btn .st{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linejoin:round;
+  vertical-align:-2.5px;margin-right:5px;display:inline-block}
+.btn.fav{color:var(--acc);border-color:var(--acc2)}
+.btn.fav .st{fill:currentColor}
+.btn.xoa{color:var(--bad);border-color:var(--bad)}
 .chip{display:inline-block;font-size:11.5px;padding:3px 9px;border-radius:999px;
   background:var(--card2);border:1px solid var(--line);color:var(--tx2)}
 .chip.acc{color:var(--acc);border-color:var(--acc2)}
@@ -242,7 +255,10 @@ const K = {
   gal: 'diy.gallery',
   body: 'diy.body',
   theme: 'diy.theme',
-  kho: 'diy.kho'
+  kho: 'diy.kho',
+  fav: 'diy.fav',
+  an: 'diy.an',
+  xoa: 'diy.xoa'
 };
 
 /* ---------------------------------------------------------------- tien ich */
@@ -1953,8 +1969,10 @@ const projCost = p => p.mats.reduce((s, m) => s + m.p, 0);
 
 /* ---------------------------------------------------------------- icon */
 const Ico = ({
-  d
+  d,
+  cl
 }) => /*#__PURE__*/React.createElement("svg", {
+  className: cl,
   viewBox: "0 0 24 24",
   "aria-hidden": "true",
   dangerouslySetInnerHTML: {
@@ -1988,7 +2006,8 @@ const ICONS = {
   shop: '<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H3"/>',
   gal: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 5"/>',
   me: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
-  check: '<path d="m4 12 5 5L20 6"/>'
+  check: '<path d="m4 12 5 5L20 6"/>',
+  sao: '<path d="M12 3.4 14.7 9.1 21 10l-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 10l6.3-.9z"/>'
 };
 
 /* ---------------------------------------------------------------- App */
@@ -2019,6 +2038,48 @@ function App() {
     setKhoS(v);
     store.set(K.kho, v);
   };
+  const [fav, setFavS] = useState(() => store.get(K.fav, []));
+  const [an, setAnS] = useState(() => store.get(K.an, []));
+  const [xoa, setXoaS] = useState(() => store.get(K.xoa, []));
+  const setFav = v => {
+    setFavS(v);
+    store.set(K.fav, v);
+  };
+  const setAn = v => {
+    setAnS(v);
+    store.set(K.an, v);
+  };
+  const setXoa = v => {
+    setXoaS(v);
+    store.set(K.xoa, v);
+  };
+  const togFav = id => setFav(fav.includes(id) ? fav.filter(x => x !== id) : fav.concat(id));
+  const togAn = id => setAn(an.includes(id) ? an.filter(x => x !== id) : an.concat(id));
+  /* xoa = bo khoi app va don sach tien do cua rieng du an do; anh thanh pham giu nguyen */
+  const xoaDA = id => {
+    if (!xoa.includes(id)) setXoa(xoa.concat(id));
+    if (fav.includes(id)) setFav(fav.filter(x => x !== id));
+    if (an.includes(id)) setAn(an.filter(x => x !== id));
+    if (doing[id]) {
+      const d = {
+        ...doing
+      };
+      delete d[id];
+      setDoing(d);
+    }
+    const s = {
+      ...shop
+    };
+    let doi = false;
+    Object.keys(s).forEach(k => {
+      if (k.split('::')[0] === id) {
+        delete s[k];
+        doi = true;
+      }
+    });
+    if (doi) setShop(s);
+  };
+  const phucHoi = id => setXoa(xoa.filter(x => x !== id));
   const setDoing = v => {
     setDoingS(v);
     store.set(K.doing, v);
@@ -2075,6 +2136,13 @@ function App() {
     dims,
     kho,
     setKho,
+    fav,
+    togFav,
+    an,
+    togAn,
+    xoa,
+    xoaDA,
+    phucHoi,
     open: setOpen,
     openKy: setOpenKy,
     openLam,
@@ -2131,7 +2199,10 @@ function PCard({
   onClick,
   prog,
   kho,
-  viSao
+  viSao,
+  fav,
+  onFav,
+  an
 }) {
   const thieu = kho ? thieuDC(p, kho) : [];
   return /*#__PURE__*/React.createElement("div", {
@@ -2144,7 +2215,11 @@ function PCard({
       flex: 1,
       minWidth: 0
     }
-  }, /*#__PURE__*/React.createElement("h3", null, p.name), /*#__PURE__*/React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("h3", {
+    style: onFav ? {
+      paddingRight: 34
+    } : null
+  }, p.name), /*#__PURE__*/React.createElement("p", {
     className: "muted",
     style: {
       marginTop: 3,
@@ -2155,7 +2230,9 @@ function PCard({
     }
   }, p.blurb), /*#__PURE__*/React.createElement("div", {
     className: "meta"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, an && /*#__PURE__*/React.createElement("span", {
+    className: "chip warn"
+  }, "đang ẩn"), /*#__PURE__*/React.createElement("span", {
     className: "chip"
   }, p.cat), /*#__PURE__*/React.createElement("span", {
     className: "chip"
@@ -2183,13 +2260,28 @@ function PCard({
     style: {
       width: prog + '%'
     }
-  }))));
+  }))), onFav && /*#__PURE__*/React.createElement("button", {
+    className: 'star' + (fav ? ' on' : ''),
+    "aria-pressed": !!fav,
+    "aria-label": (fav ? 'Bỏ yêu thích ' : 'Yêu thích ') + p.name,
+    onClick: e => {
+      e.stopPropagation();
+      onFav();
+    }
+  }, /*#__PURE__*/React.createElement(Ico, {
+    d: ICONS.sao
+  })));
 }
 function Library({
   open,
   openKy,
   doing,
-  kho
+  kho,
+  fav,
+  togFav,
+  an,
+  togAn,
+  xoa
 }) {
   const [mode, setMode] = useState('du');
   const [cat, setCat] = useState('all');
@@ -2197,20 +2289,22 @@ function Library({
   const [sort, setSort] = useState('mac');
   const [flt, setFlt] = useState([]);
   const tog = f => setFlt(flt.includes(f) ? flt.filter(x => x !== f) : flt.concat(f));
-  const hop = p => (!flt.includes('nhanh') || p.hours <= 1) && (!flt.includes('re') || projCost(p) <= 100000) && (!flt.includes('de') || p.diff === 1) && (!flt.includes('cc') || !p.flags || p.flags.chungcu !== false) && (!flt.includes('dc') || !thieuDC(p, kho).length);
+  const song = PROJECTS.filter(p => !xoa.includes(p.id)); /* chưa xoá */
+  const hien = song.filter(p => !an.includes(p.id)); /* chưa xoá, chưa ẩn */
+  const hop = p => (!flt.includes('sao') || fav.includes(p.id)) && (!flt.includes('nhanh') || p.hours <= 1) && (!flt.includes('re') || projCost(p) <= 100000) && (!flt.includes('de') || p.diff === 1) && (!flt.includes('cc') || !p.flags || p.flags.chungcu !== false) && (!flt.includes('dc') || !thieuDC(p, kho).length);
   const SORTS = {
     mac: () => 0,
     de: (a, b) => a.diff - b.diff || a.hours - b.hours,
     re: (a, b) => projCost(a) - projCost(b),
     nhanh: (a, b) => a.hours - b.hours
   };
-  const list = PROJECTS.filter(p => (cat === 'all' || p.cat === cat) && hop(p) && (!q || (p.name + ' ' + p.blurb + ' ' + p.cat + ' ' + p.mats.map(m => m.n).join(' ') + ' ' + p.tools.join(' ')).toLowerCase().includes(q.toLowerCase()))).slice().sort(SORTS[sort]);
+  const list = (flt.includes('an') ? song : hien).filter(p => (cat === 'all' || p.cat === cat) && hop(p) && (!q || (p.name + ' ' + p.blurb + ' ' + p.cat + ' ' + p.mats.map(m => m.n).join(' ') + ' ' + p.tools.join(' ')).toLowerCase().includes(q.toLowerCase()))).slice().sort((a, b) => (fav.includes(b.id) ? 1 : 0) - (fav.includes(a.id) ? 1 : 0) || SORTS[sort](a, b));
   const kyList = KYNANG.filter(k => !q || (k.ten + ' ' + k.tomtat + ' ' + k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
 
   /* chỉ mục vật liệu: gom theo tên, đếm số dự án dùng tới */
   const vlIndex = useMemo(() => {
     const m = {};
-    PROJECTS.forEach(p => p.mats.forEach(x => {
+    song.forEach(p => p.mats.forEach(x => {
       const k = x.n.trim();
       if (!m[k]) m[k] = {
         n: k,
@@ -2221,7 +2315,7 @@ function Library({
       if (!m[k].du.includes(p.id)) m[k].du.push(p.id);
     }));
     return Object.values(m).sort((a, b) => b.du.length - a.du.length || a.n.localeCompare(b.n, 'vi'));
-  }, []);
+  }, [xoa]);
   const vlList = vlIndex.filter(v => !q || v.n.toLowerCase().includes(q.toLowerCase()));
   const vlNhom = {};
   vlList.forEach(v => (vlNhom[v.mua] = vlNhom[v.mua] || []).push(v));
@@ -2245,7 +2339,7 @@ function Library({
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "hd"
-  }, /*#__PURE__*/React.createElement("h1", null, "Xưởng Nhà"), /*#__PURE__*/React.createElement("p", null, mode === 'du' ? PROJECTS.length + ' dự án tự làm · vật liệu mua được ở Việt Nam' : mode === 'ky' ? KYNANG.length + ' kỹ năng nền — đọc trước khi bắt tay vào làm' : 'Còn thừa thứ gì trong nhà? Tìm xem làm được món nào'), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("h1", null, "Xưởng Nhà"), /*#__PURE__*/React.createElement("p", null, mode === 'du' ? hien.length + ' dự án tự làm' + (fav.length ? ' · ' + fav.length + ' yêu thích' : '') + (an.length ? ' · ' + an.length + ' đang ẩn' : '') + (xoa.length ? ' · ' + xoa.length + ' đã xoá' : '') : mode === 'ky' ? KYNANG.length + ' kỹ năng nền — đọc trước khi bắt tay vào làm' : 'Còn thừa thứ gì trong nhà? Tìm xem làm được món nào'), /*#__PURE__*/React.createElement("div", {
     className: "seg2"
   }, /*#__PURE__*/React.createElement("button", {
     className: mode === 'du' ? 'on' : '',
@@ -2277,7 +2371,7 @@ function Library({
     placeholder: mode === 'du' ? 'Tìm dự án, vật liệu, dụng cụ…' : mode === 'ky' ? 'Tìm kỹ năng…' : 'Tìm vật liệu…'
   })), mode === 'du' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "fltrow"
-  }, [['nhanh', 'dưới 1 giờ'], ['re', 'dưới 100k'], ['de', 'dễ'], ['cc', 'làm được ở chung cư']].concat(kho && kho.length ? [['dc', 'đủ dụng cụ tôi có']] : []).map(([k, l]) => /*#__PURE__*/React.createElement("button", {
+  }, (fav.length ? [['sao', '★ yêu thích']] : []).concat([['nhanh', 'dưới 1 giờ'], ['re', 'dưới 100k'], ['de', 'dễ'], ['cc', 'làm được ở chung cư']]).concat(kho && kho.length ? [['dc', 'đủ dụng cụ tôi có']] : []).concat(an.length ? [['an', 'hiện cả ' + an.length + ' dự án đã ẩn']] : []).map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
     className: 'fchip' + (flt.includes(k) ? ' on' : ''),
     onClick: () => tog(k)
@@ -2304,10 +2398,13 @@ function Library({
     prog: prog(p),
     kho: kho,
     viSao: viSao(p),
+    fav: fav.includes(p.id),
+    onFav: () => togFav(p.id),
+    an: an.includes(p.id),
     onClick: () => open(p.id)
   })), !list.length && /*#__PURE__*/React.createElement("div", {
     className: "empty"
-  }, "Không có dự án nào khớp.", /*#__PURE__*/React.createElement("br", null), "Bỏ bớt một bộ lọc thử xem.")), mode === 'ky' && /*#__PURE__*/React.createElement(React.Fragment, null, kyList.map(k => /*#__PURE__*/React.createElement("div", {
+  }, "Không có dự án nào khớp.", /*#__PURE__*/React.createElement("br", null), an.length && !flt.includes('an') ? 'Còn ' + an.length + ' dự án đang ẩn — bấm chip "hiện cả … đã ẩn" ở trên.' : 'Bỏ bớt một bộ lọc thử xem.')), mode === 'ky' && /*#__PURE__*/React.createElement(React.Fragment, null, kyList.map(k => /*#__PURE__*/React.createElement("div", {
     className: "card pcard",
     key: k.id,
     onClick: () => openKy(k.id)
@@ -2334,7 +2431,7 @@ function Library({
     className: "chip"
   }, k.buoc.length, " điều cốt lõi"), /*#__PURE__*/React.createElement("span", {
     className: "chip"
-  }, PROJECTS.filter(p => (p.skills || []).includes(k.id)).length, " dự án dùng"))))), !kyList.length && /*#__PURE__*/React.createElement("div", {
+  }, song.filter(p => (p.skills || []).includes(k.id)).length, " dự án dùng"))))), !kyList.length && /*#__PURE__*/React.createElement("div", {
     className: "empty"
   }, "Không có kỹ năng nào khớp.")), mode === 'vl' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
     className: "tiny",
@@ -2667,7 +2764,14 @@ function ProjectView({
   openKy,
   lamNgay,
   clearLam,
-  kho
+  kho,
+  fav,
+  togFav,
+  an,
+  togAn,
+  xoa,
+  xoaDA,
+  phucHoi
 }) {
   const p = byId(id);
   const thieu = thieuDC(p, kho);
@@ -2708,6 +2812,9 @@ function ProjectView({
   const pct = Math.round(doneCount / p.steps.length * 100);
   const segs = [['tq', 'Tổng quan'], ['vl', 'Vật liệu'], ['bw', 'Các bước']];
   if (p.hasDraw) segs.push(['bv', 'Bản vẽ']);
+  const laFav = (fav || []).includes(id),
+    laAn = (an || []).includes(id),
+    daXoa = (xoa || []).includes(id);
   return /*#__PURE__*/React.createElement("div", {
     className: "sheet"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2726,7 +2833,13 @@ function ProjectView({
     style: {
       marginTop: 7
     }
-  }, /*#__PURE__*/React.createElement("span", {
+  }, daXoa && /*#__PURE__*/React.createElement("span", {
+    className: "chip warn"
+  }, "đã xoá"), !daXoa && laAn && /*#__PURE__*/React.createElement("span", {
+    className: "chip warn"
+  }, "đang ẩn"), laFav && /*#__PURE__*/React.createElement("span", {
+    className: "chip acc"
+  }, "★ yêu thích"), /*#__PURE__*/React.createElement("span", {
     className: "chip"
   }, p.cat), /*#__PURE__*/React.createElement("span", {
     className: "chip"
@@ -2852,7 +2965,51 @@ function ProjectView({
   }, "→ ", t))), p.warns && p.warns.map((w, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "warnbox"
-  }, /*#__PURE__*/React.createElement("h4", null, w.t), /*#__PURE__*/React.createElement("p", null, w.d)))), seg === 'vl' && /*#__PURE__*/React.createElement(MatList, {
+  }, /*#__PURE__*/React.createElement("h4", null, w.t), /*#__PURE__*/React.createElement("p", null, w.d))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("h3", null, "Dự án này"), daXoa ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "tiny",
+    style: {
+      marginTop: 4,
+      lineHeight: 1.6
+    }
+  }, "Đã xoá khỏi app. Khôi phục thì dự án quay lại thư viện, nhưng tiến độ các bước và các món đã tick mua thì không lấy lại được."), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost",
+    style: {
+      marginTop: 11
+    },
+    onClick: () => phucHoi(id)
+  }, "Khôi phục dự án")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "row",
+    style: {
+      marginTop: 11,
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: 'btn sm ghost' + (laFav ? ' fav' : ''),
+    "aria-pressed": laFav,
+    onClick: () => togFav(id)
+  }, /*#__PURE__*/React.createElement(Ico, {
+    cl: "st",
+    d: ICONS.sao
+  }), laFav ? 'Đang yêu thích' : 'Yêu thích'), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost",
+    onClick: () => togAn(id)
+  }, laAn ? 'Bỏ ẩn' : 'Ẩn khỏi thư viện'), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost xoa",
+    onClick: () => {
+      if (confirm('Xoá “' + p.name + '” khỏi app?\n\nMất luôn tiến độ các bước và các món đã tick mua của riêng dự án này. Ảnh thành phẩm vẫn giữ nguyên.\n\nKhôi phục dự án lại được ở tab Tôi, nhưng tiến độ thì không.')) {
+        xoaDA(id);
+        close();
+      }
+    }
+  }, "Xoá dự án")), /*#__PURE__*/React.createElement("p", {
+    className: "tiny",
+    style: {
+      marginTop: 10,
+      lineHeight: 1.6
+    }
+  }, laAn ? 'Đang ẩn — không hiện ở thư viện và ở gợi ý nữa, tiến độ vẫn giữ nguyên. Bỏ ẩn lúc nào cũng được.' : 'Ẩn thì dự án biến khỏi thư viện và khỏi gợi ý, tiến độ vẫn còn. Xoá thì mất tiến độ.')))), seg === 'vl' && /*#__PURE__*/React.createElement(MatList, {
     p: p,
     shop: shop,
     setShop: setShop
@@ -3104,7 +3261,10 @@ function Doing({
   setDoing,
   open,
   openLam,
-  gal
+  gal,
+  fav,
+  an,
+  xoa
 }) {
   const list = Object.keys(doing).map(id => ({
     id,
@@ -3135,9 +3295,9 @@ function Doing({
   })() : null;
 
   /* gợi ý: dự án chưa đụng tới, đổi theo ngày cho đỡ chán */
-  const chuaLam = PROJECTS.filter(p => !doing[p.id]);
+  const chuaLam = PROJECTS.filter(p => !doing[p.id] && !an.includes(p.id) && !xoa.includes(p.id));
   const mocNgay = parseInt(today().replace(/-/g, ''), 10) || 0;
-  const goiY = chuaLam.slice().sort((a, b) => (a.id.length * 7 + mocNgay) % chuaLam.length - (b.id.length * 7 + mocNgay) % chuaLam.length).slice(0, 3);
+  const goiY = chuaLam.slice().sort((a, b) => (fav.includes(b.id) ? 1 : 0) - (fav.includes(a.id) ? 1 : 0) || (a.id.length * 7 + mocNgay) % chuaLam.length - (b.id.length * 7 + mocNgay) % chuaLam.length).slice(0, 3);
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "hd"
   }, /*#__PURE__*/React.createElement("h1", null, "Hôm nay"), /*#__PURE__*/React.createElement("p", null, dangDo.length ? dangDo.length + ' dự án đang dở · ' + hoanTat.length + ' đã xong' : 'Bàn đang trống — chọn một món để bắt đầu')), /*#__PURE__*/React.createElement("div", {
@@ -3538,7 +3698,8 @@ function Gallery({
   gal,
   setGal,
   doing,
-  open
+  open,
+  xoa
 }) {
   const [add, setAdd] = useState(false);
   const [xem, setXem] = useState(null);
@@ -3616,7 +3777,7 @@ function Gallery({
     value: p.id
   }, p.name))), /*#__PURE__*/React.createElement("optgroup", {
     label: "Tất cả"
-  }, PROJECTS.map(p => /*#__PURE__*/React.createElement("option", {
+  }, PROJECTS.filter(p => !xoa.includes(p.id)).map(p => /*#__PURE__*/React.createElement("option", {
     key: p.id,
     value: p.id
   }, p.name)))), /*#__PURE__*/React.createElement("div", {
@@ -3868,7 +4029,15 @@ function Me({
   setLight,
   dims,
   kho,
-  setKho
+  setKho,
+  open,
+  fav,
+  togFav,
+  an,
+  togAn,
+  xoa,
+  xoaDA,
+  phucHoi
 }) {
   const togDC = id => setKho(kho.includes(id) ? kho.filter(x => x !== id) : kho.concat(id));
   const thieuTien = DUNGCU.filter(d => d.nen && !kho.includes(d.id)).reduce((s, d) => s + d.p, 0);
@@ -3924,7 +4093,69 @@ function Me({
     className: "kpi"
   }, /*#__PURE__*/React.createElement("b", null, String(gioThat).replace('.', ','), " giờ"), /*#__PURE__*/React.createElement("span", null, "đã bỏ ra, theo ghi chép của Huy")), kho.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "kpi"
-  }, /*#__PURE__*/React.createElement("b", null, kho.length, "/", DUNGCU.length), /*#__PURE__*/React.createElement("span", null, "dụng cụ đã có trong nhà"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("b", null, kho.length, "/", DUNGCU.length), /*#__PURE__*/React.createElement("span", null, "dụng cụ đã có trong nhà"))), !!(fav.length || an.length || xoa.length) && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("h3", null, "Dự án đã đánh dấu"), !!fav.length && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "secttl",
+    style: {
+      marginTop: 9
+    }
+  }, "★ YÊU THÍCH — ", fav.length), fav.map(byId).filter(Boolean).map(p => /*#__PURE__*/React.createElement("div", {
+    className: "qlrow",
+    key: p.id
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: 13.5,
+      cursor: 'pointer'
+    },
+    onClick: () => open(p.id)
+  }, p.name), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost",
+    onClick: () => togFav(p.id)
+  }, "Bỏ yêu thích")))), !!an.length && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "secttl",
+    style: {
+      marginTop: 13
+    }
+  }, "ĐANG ẨN — ", an.length), /*#__PURE__*/React.createElement("p", {
+    className: "tiny"
+  }, "Không hiện ở thư viện và ở gợi ý; tiến độ vẫn giữ nguyên."), an.map(byId).filter(Boolean).map(p => /*#__PURE__*/React.createElement("div", {
+    className: "qlrow",
+    key: p.id
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: 13.5,
+      cursor: 'pointer'
+    },
+    onClick: () => open(p.id)
+  }, p.name), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost",
+    onClick: () => togAn(p.id)
+  }, "Bỏ ẩn")))), !!xoa.length && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("p", {
+    className: "secttl",
+    style: {
+      marginTop: 13
+    }
+  }, "ĐÃ XOÁ — ", xoa.length), /*#__PURE__*/React.createElement("p", {
+    className: "tiny"
+  }, "Khôi phục thì dự án quay lại thư viện, tiến độ cũ thì không."), xoa.map(byId).filter(Boolean).map(p => /*#__PURE__*/React.createElement("div", {
+    className: "qlrow",
+    key: p.id
+  }, /*#__PURE__*/React.createElement("b", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: 13.5,
+      opacity: .6
+    }
+  }, p.name), /*#__PURE__*/React.createElement("button", {
+    className: "btn sm ghost",
+    onClick: () => phucHoi(p.id)
+  }, "Khôi phục"))))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "between"
@@ -4104,7 +4335,7 @@ function Me({
       textAlign: 'center',
       marginTop: 18
     }
-  }, "Xưởng Nhà · ", PROJECTS.length, " dự án · ", KYNANG.length, " kỹ năng")));
+  }, "Xưởng Nhà · ", PROJECTS.length - xoa.length, " dự án · ", KYNANG.length, " kỹ năng")));
 }
 const boot = document.getElementById('boot');
 if (boot) boot.remove();
