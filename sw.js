@@ -1,8 +1,8 @@
 /* Xưởng Nhà — service worker.
-   Mục đích: mở được app khi mất mạng, kể cả ba thư viện nạp từ jsDelivr.
+   Mục đích: mở được app khi mất mạng, kể cả hai thư viện nạp từ jsDelivr.
    Chiến lược: đọc từ kho trước rồi âm thầm làm mới (stale-while-revalidate).
    Tăng KHO mỗi lần đổi index.html để bản cũ bị dọn đi. */
-const KHO = 'xuongnha-v2';
+const KHO = 'xuongnha-v3';
 const VON = [
   './',
   './index.html',
@@ -10,8 +10,7 @@ const VON = [
   './icon-192.png',
   './icon-512.png',
   'https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js',
-  'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js',
-  'https://cdn.jsdelivr.net/npm/@babel/standalone@7.23.6/babel.min.js'
+  'https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js'
 ];
 
 self.addEventListener('install', e => {

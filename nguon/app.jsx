@@ -1,0 +1,1917 @@
+
+const {useState,useEffect,useMemo,useRef} = React;
+
+/* ---------------------------------------------------------------- luu tru */
+const store = (()=>{ let ok=true, mem={};
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }catch(e){ ok=false; }
+  return {
+    get(k,d){ try{ const v = ok? localStorage.getItem(k) : mem[k]; return v? JSON.parse(v) : d; }catch(e){ return d; } },
+    set(k,v){ try{ const s=JSON.stringify(v); if(ok) localStorage.setItem(k,s); else mem[k]=s; }catch(e){} },
+    del(k){ try{ if(ok) localStorage.removeItem(k); else delete mem[k]; }catch(e){} }
+  };
+})();
+const K = {doing:'diy.doing', shop:'diy.shop', gal:'diy.gallery', body:'diy.body',
+           theme:'diy.theme', kho:'diy.kho'};
+
+/* ---------------------------------------------------------------- tien ich */
+const vnd = n => n>=1000 ? (n/1000).toLocaleString('vi-VN',{maximumFractionDigits:0})+'k' : n+'đ';
+const vndFull = n => n.toLocaleString('vi-VN')+'đ';
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const dateVN = s => { const p=String(s).split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : s; };
+const DIFF = {1:'Dễ',2:'Vừa',3:'Khó'};
+const gio = h => h<1 ? Math.round(h*60)+' phút' : (h%1 ? h.toString().replace('.',',') : h)+' giờ';
+const P = (cx,cy,r,deg)=>{ const a=deg*Math.PI/180; return [cx+r*Math.cos(a), cy-r*Math.sin(a)]; };
+
+/* ---------------------------------------------------------------- hinh ve DOME-01 (SVG parametric) */
+const AR = '<marker id="ar" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto">'+
+  '<path d="M0 3.5 L7 .6 L7 6.4 Z" fill="var(--warn)"/></marker>'+
+  '<marker id="ar2" markerWidth="6" markerHeight="6" refX="3" refY="5.2" orient="auto">'+
+  '<path d="M0 0 L3 6 L6 0 Z" fill="var(--warn)"/></marker>'+
+  '<pattern id="mesh" width="9" height="9" patternUnits="userSpaceOnUse">'+
+  '<rect width="9" height="9" fill="var(--card)"/>'+
+  '<circle cx="4.5" cy="4.5" r="2.6" fill="none" stroke="var(--acc)" stroke-width=".8" opacity=".55"/></pattern>'+
+  '<linearGradient id="gh" x1=".15" y1="0" x2=".85" y2="1">'+
+  '<stop offset="0" stop-color="#8d99a6"/><stop offset="1" stop-color="#5a6673"/></linearGradient>'+
+  '<linearGradient id="gs" x1=".1" y1="0" x2=".9" y2="1">'+
+  '<stop offset="0" stop-color="#46617f"/><stop offset="1" stop-color="#1b2836"/></linearGradient>';
+
+const svg = (vb,inner) => '<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg"><defs>'+AR+'</defs>'+
+  '<style>text{font-family:"Segoe UI",system-ui,sans-serif}'+
+  '.d{font:600 11.5px Consolas,monospace;fill:var(--warn)}'+
+  '.dc{font:600 11.5px Consolas,monospace;fill:var(--acc)}'+
+  '.l{font:600 12px "Segoe UI",sans-serif;fill:var(--tx)}'+
+  '.r{font:11.5px "Segoe UI",sans-serif;fill:var(--tx2)}</style>'+inner+'</svg>';
+
+const aH = (x1,x2,y,t)=> '<line x1="'+x1+'" y1="'+y+'" x2="'+x2+'" y2="'+y+'" stroke="var(--warn)" stroke-width="1.2" '+
+  'marker-start="url(#ar)" marker-end="url(#ar)"/><text x="'+((x1+x2)/2)+'" y="'+(y-6)+'" text-anchor="middle" class="d">'+t+'</text>';
+const aV = (y1,y2,x,t,anch,dx)=> '<line x1="'+x+'" y1="'+y1+'" x2="'+x+'" y2="'+y2+'" stroke="var(--warn)" stroke-width="1.2" '+
+  'marker-start="url(#ar)" marker-end="url(#ar)"/><text x="'+(x+(dx||7))+'" y="'+((y1+y2)/2+4)+'" text-anchor="'+(anch||'start')+'" class="d">'+t+'</text>';
+const stit = pts => pts.map(p=>'<line x1="'+(p[0]-3.2)+'" y1="'+(p[1]-3.2)+'" x2="'+(p[0]+3.2)+'" y2="'+(p[1]+3.2)+
+  '" stroke="var(--bad)" stroke-width="1.9" stroke-linecap="round"/>').join('');
+
+const FIG = {
+  do(d){ const cx=148,cy=100,r=56;
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r)+' '+cy+' A'+r+' '+r+' 0 1 1 '+(cx+r)+' '+cy+' L'+(cx+r)+' '+(cy+20)+
+        ' Q'+cx+' '+(cy+28)+' '+(cx-r)+' '+(cy+20)+' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-10)+' '+(cy-2)+' A'+(r+20)+' '+(r+20)+' 0 1 1 '+(cx+r+10)+' '+(cy-2)+
+        '" fill="none" stroke="var(--acc)" stroke-width="2.6" stroke-dasharray="8 7" stroke-linecap="round"/>'+
+      '<path d="M'+(cx-r-6)+' '+(cy-6)+' Q'+cx+' '+(cy+9)+' '+(cx+r+6)+' '+(cy-6)+
+        '" fill="none" stroke="var(--warn)" stroke-width="6" stroke-linecap="round"/>'+
+      '<circle cx="30" cy="34" r="9" fill="none" stroke="var(--acc)" stroke-width="1.6"/>'+
+      '<text x="30" y="38" text-anchor="middle" class="dc">2</text>'+
+      '<text x="45" y="38" class="dc">cung qua đỉnh · '+d.cung+' mm</text>'+
+      '<circle cx="30" cy="146" r="9" fill="none" stroke="var(--warn)" stroke-width="1.6"/>'+
+      '<text x="30" y="150" text-anchor="middle" class="d">1</text>'+
+      '<text x="45" y="150" class="d">chu vi vòng đầu · '+d.chuVi+' mm</text>');
+  },
+  duong(d){ const x1=30,x2=176;
+    return svg('0 0 296 160',
+      '<path d="M'+x1+' 42 L'+x2+' 50 L'+x2+' 72 L'+x1+' 80 Z" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.6"/>'+
+      aH(x1,x2,30,'L = '+d.nanL+' mm')+aV(42,80,20,'30','end',-7)+aV(50,72,188,'20')+
+      '<text x="'+((x1+x2)/2)+'" y="97" text-anchor="middle" class="l">NAN · 6 cái</text>'+
+      '<circle cx="248" cy="58" r="26" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.6"/>'+
+      aH(222,274,26,'Ø60')+
+      '<text x="248" y="97" text-anchor="middle" class="l">ĐĨA · 2 cái</text>'+
+      '<rect x="30" y="116" width="244" height="17" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>'<line x1="'+(50+k*41)+'" y1="116" x2="'+(50+k*41)+'" y2="133" stroke="var(--vio)" stroke-width="1.5" stroke-dasharray="3 3"/>').join('')+
+      aV(116,133,20,'25','end',-7)+
+      '<text x="152" y="148" text-anchor="middle" class="l">ĐAI · '+d.daiL+' mm</text>');
+  },
+  cat(){ return svg('0 0 296 160',
+      '<rect x="26" y="20" width="152" height="112" rx="4" fill="url(#mesh)" stroke="var(--line)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>{const y=24+k*18; return '<path d="M32 '+(y+2)+' L166 '+(y+5)+' L166 '+(y+12)+' L32 '+(y+15)+
+        '" fill="none" stroke="var(--acc)" stroke-width="1.3" stroke-dasharray="5 4"/>';}).join('')+
+      '<text x="102" y="148" text-anchor="middle" class="r">tấm lưới 3D · 30×30 cm</text>'+
+      '<g transform="translate(196 30) rotate(34)"><rect x="0" y="0" width="72" height="16" rx="3" fill="var(--card2)" stroke="var(--tx2)" stroke-width="1.2"/>'+
+      '<path d="M72 2 L95 8 L72 14 Z" fill="var(--tx2)"/><circle cx="17" cy="8" r="2.8" fill="var(--tx3)"/></g>'+
+      '<path d="M232 96 L232 122" stroke="var(--warn)" stroke-width="2.6" marker-end="url(#ar2)"/>'+
+      '<text x="232" y="140" text-anchor="middle" class="d">vuông góc</text>');
+  },
+  dinh(){ const cx=148,cy=70;
+    let s='';
+    for(let k=0;k<6;k++){ const a=k*60*Math.PI/180;
+      s+='<line x1="'+(cx+13*Math.cos(a)).toFixed(1)+'" y1="'+(cy+13*Math.sin(a)).toFixed(1)+
+         '" x2="'+(cx+62*Math.cos(a)).toFixed(1)+'" y2="'+(cy+62*Math.sin(a)).toFixed(1)+
+         '" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" opacity=".9"/>'; }
+    const dots=[]; for(let k=0;k<12;k++){ const a=k*30*Math.PI/180; dots.push([cx+22*Math.cos(a),cy+22*Math.sin(a)]); }
+    return svg('0 0 296 160', s+
+      '<circle cx="'+cx+'" cy="'+cy+'" r="29" fill="var(--card2)" stroke="var(--acc)" stroke-width="2"/>'+stit(dots)+
+      '<path d="M'+(cx+74)+' '+cy+' A74 74 0 0 0 '+(cx+37)+' '+(cy+64)+'" fill="none" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="4 4"/>'+
+      '<text x="'+(cx+78)+'" y="'+(cy+46)+'" class="d">60°</text>'+
+      '<text x="'+cx+'" y="'+(cy+4)+'" text-anchor="middle" class="l">ĐĨA</text>'+
+      '<text x="148" y="152" text-anchor="middle" class="r">khâu một vòng quanh mép đĩa</text>');
+  },
+  chan(d){ return svg('0 0 296 160',
+      '<rect x="26" y="94" width="256" height="21" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      [0,1,2,3,4,5].map(k=>'<line x1="'+(46+k*47)+'" y1="90" x2="'+(46+k*47)+'" y2="119" stroke="var(--vio)" stroke-width="1.5" stroke-dasharray="3 3"/>').join('')+
+      aH(140,187,82,d.spacing+' mm')+
+      '<path d="M36 94 L56 94 L51 28 L41 28 Z" fill="url(#mesh)" stroke="var(--acc)" stroke-width="1.5"/>'+
+      stit([[41,102],[46,108],[51,102],[46,98]])+
+      '<path d="M72 42 L72 88" stroke="var(--warn)" stroke-width="1.2" marker-end="url(#ar2)"/>'+
+      '<text x="80" y="54" class="d">dựng thẳng 90°</text>'+
+      '<text x="26" y="140" class="r">gập 10 mm chân nan, khâu ô chữ nhật</text>');
+  },
+  vong(){ return svg('0 0 296 160',
+      '<rect x="18" y="60" width="152" height="21" rx="3" fill="#3c5268" stroke="var(--vio)" stroke-width="1.4"/>'+
+      '<rect x="126" y="70" width="152" height="21" rx="3" fill="#4a6076" stroke="var(--vio)" stroke-width="1.4"/>'+
+      '<rect x="130" y="64" width="40" height="23" rx="2" fill="none" stroke="var(--bad)" stroke-width="1.9"/>'+
+      '<path d="M130 64 L170 87 M170 64 L130 87" stroke="var(--bad)" stroke-width="1.7"/>'+
+      aH(130,170,46,'chồng 30 mm')+
+      '<ellipse cx="148" cy="122" rx="52" ry="16" fill="none" stroke="var(--vio)" stroke-width="8"/>'+
+      '<rect x="140" y="106" width="16" height="9" rx="2" fill="var(--bad)" opacity=".85"/>'+
+      '<text x="212" y="118" class="r">vòng kín —</text><text x="212" y="134" class="r">đội thử trước</text>');
+  },
+  lap(){ const cx=148,cy=124,r=70; let dots='';
+    [154,122,90,58,26].forEach(k=>{ const a=k*Math.PI/180;
+      dots+='<circle cx="'+(cx+(r-8)*Math.cos(a)).toFixed(1)+'" cy="'+(cy-(r-8)*Math.sin(a)).toFixed(1)+'" r="6.5" fill="var(--vio)"/>'; });
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r-22)+' '+cy+' A'+(r+22)+' '+(r+22)+' 0 1 1 '+(cx+r+22)+' '+cy+' L'+(cx+r+16)+' '+cy+
+        ' A'+(r+16)+' '+(r+16)+' 0 1 0 '+(cx-r-16)+' '+cy+' Z" fill="url(#gs)" stroke="#0a1119" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-16)+' '+cy+' A'+(r+16)+' '+(r+16)+' 0 1 1 '+(cx+r+16)+' '+cy+' L'+(cx+r)+' '+cy+
+        ' A'+r+' '+r+' 0 1 0 '+(cx-r)+' '+cy+' Z" fill="#2b3d52" stroke="#0a1119" stroke-width="1"/>'+
+      '<path d="M'+(cx-r+8)+' '+cy+' A'+(r-8)+' '+(r-8)+' 0 1 1 '+(cx+r-8)+' '+cy+
+        '" fill="none" stroke="var(--acc)" stroke-width="8" stroke-linecap="round"/>'+dots+
+      '<path d="M'+cx+' 12 L'+cx+' 44" stroke="var(--warn)" stroke-width="3" marker-end="url(#ar2)"/>'+
+      '<text x="'+(cx+12)+'" y="30" class="d">ấn vào</text>'+
+      '<circle cx="30" cy="140" r="6.5" fill="var(--vio)"/>'+
+      '<text x="43" y="144" class="r">gai dính, dán lên lớp lót vải</text>');
+  },
+  thu(){ const cx=138,cy=128,r=54;
+    return svg('0 0 296 160',
+      '<path d="M'+(cx-r)+' '+cy+' A'+r+' '+r+' 0 1 1 '+(cx+r)+' '+cy+' L'+(cx+r)+' '+(cy+18)+
+        ' Q'+cx+' '+(cy+26)+' '+(cx-r)+' '+(cy+18)+' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-22)+' '+(cy-4)+' A'+(r+22)+' '+(r+22)+' 0 1 1 '+(cx+r+22)+' '+(cy-4)+' L'+(cx+r+8)+' '+(cy-4)+
+        ' A'+(r+8)+' '+(r+8)+' 0 1 0 '+(cx-r-8)+' '+(cy-4)+' Z" fill="url(#gs)" stroke="#0a1119" stroke-width="1.2"/>'+
+      '<path d="M'+(cx-r-4)+' '+(cy-4)+' A'+(r+4)+' '+(r+4)+' 0 1 1 '+(cx+r+4)+' '+(cy-4)+
+        '" fill="none" stroke="var(--acc)" stroke-width="2.4" stroke-dasharray="6 5"/>'+
+      '<line x1="'+(cx+38)+'" y1="'+(cy-r-22)+'" x2="'+(cx+96)+'" y2="'+(cy-r-22)+'" stroke="var(--tx3)" stroke-width="1"/>'+
+      '<line x1="'+(cx+52)+'" y1="'+(cy-r-4)+'" x2="'+(cx+96)+'" y2="'+(cy-r-4)+'" stroke="var(--tx3)" stroke-width="1"/>'+
+      aV(cy-r-22,cy-r-4,cx+88,'10–12 mm')+
+      '<path d="M'+(cx-92)+' '+(cy-30)+' a34 34 0 0 1 26 -40" fill="none" stroke="var(--warn)" stroke-width="2" marker-end="url(#ar2)" stroke-dasharray="5 4"/>'+
+      '<text x="16" y="'+(cy+4)+'" class="d">lắc mạnh</text><text x="16" y="'+(cy+20)+'" class="d">không xoay</text>');
+  }
+};
+
+/* Hình chỉ phụ thuộc số đo, mà số đo thì hiếm khi đổi — dựng một lần rồi giữ lại.
+   Chuỗi HTML giống hệt còn giúp React bỏ qua luôn việc ghi lại DOM. */
+const _kho_hinh = {};
+const figHTML = (ten,d) => {
+  const k = ten+'|'+d.chuVi+'|'+d.cung;
+  if(!_kho_hinh[k]) _kho_hinh[k] = (ten==='matcat' ? figMatCat(d) : FIG[ten](d));
+  return _kho_hinh[k];
+};
+
+/* mat cat doc — ban ve ky thuat */
+function figMatCat(d){
+  const CX=178, CY=190, R=112, px = R/95;
+  const mm = v => v*px;
+  const rGap = R+mm(12), rEps = rGap+mm(25), rShell = rEps+mm(4);
+  const D1=172, D2=-30, BASE=CY+126;
+  const band=(r1,r2,f,extra,g1,g2)=>{ const s1=(g1==null?D1:g1), s2=(g2==null?D2:g2);
+    const a=P(CX,CY,r2,s1),b=P(CX,CY,r2,s2),c=P(CX,CY,r1,s2),e=P(CX,CY,r1,s1);
+    const la = Math.abs(s1-s2)>180 ? 1 : 0;
+    return '<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' A'+r2.toFixed(1)+' '+r2.toFixed(1)+' 0 '+la+' 1 '+b[0].toFixed(1)+' '+b[1].toFixed(1)+
+      ' L'+c[0].toFixed(1)+' '+c[1].toFixed(1)+' A'+r1.toFixed(1)+' '+r1.toFixed(1)+' 0 '+la+' 0 '+e[0].toFixed(1)+' '+e[1].toFixed(1)+
+      ' Z" fill="'+f+'" '+(extra||'')+'/>'; };
+  const h1=P(CX,CY,R,186), h2=P(CX,CY,R,-6);
+  let s='<path d="M'+h1[0].toFixed(1)+' '+h1[1].toFixed(1)+' A'+R+' '+R+' 0 1 1 '+h2[0].toFixed(1)+' '+h2[1].toFixed(1)+
+    ' C'+(CX+113)+' '+(CY+48)+' '+(CX+105)+' '+(CY+92)+' '+(CX+84)+' '+BASE+
+    ' L'+(CX-75)+' '+BASE+
+    ' C'+(CX-100)+' '+(CY+90)+' '+(CX-113)+' '+(CY+46)+' '+h1[0].toFixed(1)+' '+h1[1].toFixed(1)+
+    ' Z" fill="url(#gh)" stroke="#8fa0b0" stroke-width="1.2"/>';
+  s += band(rEps,rShell,'url(#gs)','stroke="#080e14" stroke-width="1"');
+  s += band(rGap,rEps,'#33485f');
+  for(let g=D2+6;g<D1;g+=8){ const a=P(CX,CY,rGap+2,g), b=P(CX,CY,rEps-2,g);
+    s+='<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="#54708c" stroke-width=".8" opacity=".4"/>'; }
+  s += band(R,rGap,'#0d151e','opacity=".95"');
+  for(let i=0;i<Math.floor((D1-D2)/3.4);i++){ const g=D2+4+i*3.4; if(g>D1-4) break;
+    const a=P(CX,CY,R+1,g), b=P(CX,CY,rGap-2,g+(i%2?4:-3));
+    s+='<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' Q'+((a[0]+b[0])/2+2).toFixed(1)+' '+((a[1]+b[1])/2).toFixed(1)+' '+b[0].toFixed(1)+' '+b[1].toFixed(1)+
+      '" stroke="#6b7d90" stroke-width="1.7" fill="none" stroke-linecap="round"/>'; }
+  for(let k=-1;k<10;k++){ const g=k*20; if(!(D2+10<g&&g<D1-14)) continue;
+    const a=P(CX,CY,R+mm(1.5),g), b=P(CX,CY,rGap-1,g);
+    s+='<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'" stroke="var(--acc)" stroke-width="5" stroke-linecap="round"/>'+
+       '<circle cx="'+a[0].toFixed(1)+'" cy="'+a[1].toFixed(1)+'" r="5.5" fill="var(--acc)"/>'; }
+  [[D1,D1-20],[D2+20,D2]].forEach(g=>{ s += band(R,R+mm(9),'var(--vio)','opacity=".9"',g[0],g[1]); });
+  const ring = rShell+20;
+  const tag=(r,deg,n)=>{ const a=P(CX,CY,r,deg), b=P(CX,CY,ring-10,deg), c=P(CX,CY,ring,deg);
+    return '<line x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+
+      '" stroke="var(--tx3)" stroke-width="1" stroke-dasharray="3 3"/>'+
+      '<circle cx="'+c[0].toFixed(1)+'" cy="'+c[1].toFixed(1)+'" r="10" fill="var(--bg)" stroke="var(--acc)" stroke-width="1.4"/>'+
+      '<text x="'+c[0].toFixed(1)+'" y="'+(c[1]+4).toFixed(1)+'" text-anchor="middle" class="dc">'+n+'</text>'; };
+  s += tag(rShell-4,150,1) + tag(rEps-mm(12),126,2) + tag(R+mm(6),96,3) +
+       tag(rGap-mm(4),64,4) + tag(R+mm(4.5),20,5);
+  s += '<text x="'+CX+'" y="'+(BASE+18)+'" text-anchor="middle" class="r">dạng đầu · chu vi '+d.chuVi+' mm</text>';
+  return svg('0 0 360 340', s);
+}
+
+/* ================================================================ DỮ LIỆU DỰ ÁN
+   Sửa dữ liệu ở đây, không phải ở giao diện.
+   Mỗi dự án: id · name · cat · diff 1-3 · hours · blurb
+     tools[] dụng cụ · skills[] khoá kỹ năng (xem KYNANG)
+     mats[{n,q,p,note,mua}] vật liệu · steps[{t,d,fig}] các bước
+     warns[{t,d}] cấm kỵ · loi[] lỗi thường gặp · bien[] biến thể
+     flags{onao,bui,chungcu} ồn 1-3 · bụi 1-3 · làm được trong chung cư
+   ============================================================================= */
+const CATS = ['Đồ đội đầu','Nội thất','Đồ dùng','Bếp','May vá','Sửa chữa','Xe cộ','Điện & mát','Cây cối'];
+const MUA = {cho:'Chợ / tạp hoá', kimkhi:'Hàng kim khí', vai:'Hàng vải', go:'Xưởng gỗ', xe:'Tiệm xe', dien:'Hàng điện', mang:'Đặt trên mạng', nha:'Sẵn trong nhà'};
+
+/* == DATA:PROJECTS == */
+const PROJECTS = [
+{
+  id:'dome01', name:'DOME-01 — khung nâng tóc cho mũ bảo hiểm', cat:'Đồ đội đầu',
+  diff:2, hours:2, blurb:'Khung sáu nan bằng lưới 3D lắp thêm vào chiếc mũ đang đội, tạo khe rỗng 10–12 mm trên đỉnh đầu. Đội cả ngày tóc vẫn còn nếp, mà không đụng một milimét nào vào phần xốp chịu va đập.',
+  calc:'dome', hasDraw:true, flags:{onao:1,bui:1,chungcu:true},
+  tools:['Dao rọc giấy + thước sắt','Kim khâu bao, chỉ dù','Bật lửa (hơ mép dây)','Thước dây mềm'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Lưới 3D dày 10 mm', q:'1 tấm 30×30 cm', p:60000, mua:'mang', note:'loại đệm ghế ô tô, độ cứng trung bình'},
+    {n:'Dây dù bản 25 mm', q:'1 m', p:15000, mua:'vai', note:'làm đai gánh tải, phải là loại không giãn'},
+    {n:'Gai dính tự dính', q:'1 cặp 20 cm', p:20000, mua:'vai', note:'cắt 6 miếng 25×25 mm'},
+    {n:'Chỉ dù + kim khâu bao', q:'1 bộ', p:15000, mua:'vai', note:'chỉ số 20 trở lên, kim đầu tam giác'},
+    {n:'Keo silicon trung tính', q:'1 tuýp nhỏ', p:25000, mua:'kimkhi', note:'chỉ khi cần cố định thêm — tuyệt đối không keo 502'}
+  ],
+  steps:[
+    {t:'Đo đầu, đo mũ', fig:'do', d:'Thước dây mềm, để tóc như thường ngày. Hai số cần lấy: chu vi vòng đầu đo ngang trán, và cung qua đỉnh từ tai này sang tai kia. Mọi kích thước bên dưới suy ra từ hai số đó.'},
+    {t:'Vẽ dưỡng lên bìa', fig:'duong', d:'Nan dài L = cung qua đỉnh ÷ 2 + 10 mm chồng mép, rộng 30 mm ở chân thuôn còn 20 mm ở đỉnh. Cắt dưỡng bìa cứng trước, áp thử vào lòng mũ, sửa cho vừa rồi mới đụng đến vải.'},
+    {t:'Cắt lưới 3D', fig:'cat', d:'6 nan + 2 đĩa ra từ một tấm 30×30 cm, dao rọc giấy kèm thước sắt. Lưỡi dao giữ vuông góc mặt vải — mép cắt vát sẽ xẹp ngay khi đội. Mép đai hơ lửa cho khỏi tưa.'},
+    {t:'Ghép chỏm đỉnh', fig:'dinh', d:'Sáu nan xếp hình sao lệch nhau đúng 60°, kẹp giữa hai đĩa, khâu một vòng tròn quanh mép đĩa, chỉ dù mũi 5 mm. Đây là khớp chịu lực duy nhất của khung — khâu kỹ, đừng dán keo.'},
+    {t:'Khâu chân nan vào đai', fig:'chan', d:'Chia đều 6 điểm trên đai, cách nhau chu vi ÷ 6. Gập 10 mm chân nan, ốp mặt trong đai, khâu ô chữ nhật. Nan phải dựng thẳng 90° — nan ngả là khe rỗng tụt xuống còn 6 mm.'},
+    {t:'Khép vòng đai', fig:'vong', d:'Chồng hai đầu đai 30 mm, khâu ô chữ nhật có gạch chéo kiểu quai ba lô. Đội thử riêng vòng đai: ôm sát chân tóc, không bóp thái dương, luồn lọt một ngón tay.'},
+    {t:'Lắp vào mũ', fig:'lap', d:'Dán 6 miếng gai dính lên lớp lót vải trong mũ, không dán lên xốp EPS. Ấn khung vào, mặt cong hướng lên, đai trùng vành mũ. Cần keo thì dùng silicon trung tính — keo 502 ăn thủng xốp.'},
+    {t:'Đội thử, nghiệm thu', fig:'thu', d:'Ba phép thử: quai vẫn siết đúng nấc cũ · lắc mạnh đầu mũ không xoay · mũ không đội cao thêm quá 12 mm. Trượt một phép nào thì tháo ra chỉnh, đừng đi ra đường.'}
+  ],
+  warns:[
+    {t:'Không gọt, không khoan xốp EPS', d:'Gọt xốp 25 mm còn 13 mm thì gia tốc dội lại vọt từ ~213 g lên ~431 g — vượt xa ngưỡng an toàn.'},
+    {t:'Không thay, không nới quai', d:'Quai gốc là thứ giữ mũ trên đầu khi ngã. Khung mới phải nằm gọn bên trong, không đụng đến quai.'},
+    {t:'Không nâng mũ cao quá 12 mm', d:'Mũ đội cao lên thì tâm mũ lệch khỏi đỉnh đầu, cú va đập trượt ra mép mũ — chỗ mỏng nhất.'},
+    {t:'Không dùng vật liệu cứng', d:'Nan phải bấm tay là sập. Nhựa cứng, thanh kim loại, dây rút đều tạo điểm dồn lực lên hộp sọ.'},
+    {t:'Mũ đã ngã một lần thì bỏ', d:'Xốp EPS chỉ hấp thụ được một cú va đập. Đừng lắp khung vào chiếc mũ đã từng đập xuống đường.'}
+  ],
+  loi:['Cắt vát mép lưới — nan xẹp ngay lần đội đầu tiên.','Khâu chỏm đỉnh bằng chỉ thường: đứt sau vài tuần, cả khung xoè ra.','Đai cắt sát chu vi đầu, không chừa 30 mm chồng mép, khép vòng xong thì chật.'],
+  bien:['Mũ nửa đầu thì rút nan còn 5, bỏ nan gáy — chỗ đó mũ không che.','Trời nóng: dùng lưới 3D loại thưa hơn, thoáng hơn nhưng nhanh xẹp hơn.']
+},
+{
+  id:'kesach', name:'Kệ sách gỗ thông treo tường', cat:'Nội thất', diff:2, hours:3,
+  blurb:'Hai tấm ván thông bắt lên ke sắt chữ L. Rẻ, chắc, treo được 12–15 cuốn mỗi tầng nếu bắt trúng gạch đặc.',
+  flags:{onao:3,bui:3,chungcu:false},
+  tools:['Khoan búa + mũi 6 mm','Thước, bút chì, ni-vô','Cưa tay hoặc nhờ cửa hàng cắt'],
+  skills:['do','khoan','cua','son'],
+  mats:[
+    {n:'Ván thông 1,2 m × 20 cm × 1,8 cm', q:'2 tấm', p:180000, mua:'go', note:'nhờ chỗ bán cắt sẵn cho phẳng'},
+    {n:'Ke sắt chữ L 20 cm', q:'4 cái', p:40000, mua:'kimkhi'},
+    {n:'Vít nở 6 mm', q:'8 bộ', p:15000, mua:'kimkhi'},
+    {n:'Giấy nhám #180', q:'2 tờ', p:10000, mua:'kimkhi'},
+    {n:'Dầu lau gỗ', q:'100 ml', p:60000, mua:'kimkhi', note:'lau 2 lớp, cách nhau 4 giờ'}
+  ],
+  steps:[
+    {t:'Đo và vạch vị trí', d:'Vạch đường ngang bằng ni-vô, đánh dấu 2 điểm ke cách mép ván 15 cm mỗi bên.'},
+    {t:'Dò dây điện trước khi khoan', d:'Dùng máy dò hoặc tránh đường thẳng đứng phía trên ổ cắm và công tắc.'},
+    {t:'Cắt ván đúng kích thước', d:'Cắt xong bo nhẹ 4 cạnh bằng nhám cho khỏi dăm.'},
+    {t:'Chà nhám và lau dầu', d:'Nhám xuôi thớ, lau sạch bụi, quét dầu lớp mỏng, chờ khô rồi lau lớp hai.'},
+    {t:'Bắt ke vào tường', d:'Khoan, đóng nở, siết ke. Kiểm tra lại bằng ni-vô trước khi siết chặt.'},
+    {t:'Lắp ván, thử tải', d:'Bắt vít ván vào ke từ dưới lên. Ấn mạnh xuống mép ngoài thử trước khi xếp sách.'}
+  ],
+  warns:[{t:'Tường thạch cao thì phải dùng nở chuyên dụng', d:'Nở nhựa thường sẽ tuột, cả kệ rơi xuống. Tường thạch cao cần nở bướm hoặc bắt trúng khung xương.'}],
+  loi:['Khoan trước rồi mới đo lại — sai một lỗ là thủng tường thừa.','Siết ke chặt hết cỡ ngay từ đầu, không còn chỗ chỉnh cho thăng bằng.'],
+  bien:['Không được khoan tường: dùng kệ chống hai bên tủ hoặc kệ đứng chân cao su.']
+},
+{
+  id:'denngu', name:'Đèn ngủ lọ thuỷ tinh + dây LED', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Món dễ nhất trong app này. Một lọ thuỷ tinh cũ, một cuộn dây LED chạy pin, 45 phút là xong.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kéo','Súng bắn keo (hoặc băng dính 2 mặt)'],
+  skills:['dan','cat'],
+  mats:[
+    {n:'Lọ thuỷ tinh miệng rộng', q:'1 cái', p:25000, mua:'nha', note:'lọ dưa muối cũ rửa sạch cũng được'},
+    {n:'Dây LED 2 m chạy pin AA', q:'1 cuộn', p:45000, mua:'dien', note:'chọn loại ánh sáng vàng ấm'},
+    {n:'Dây gai trang trí', q:'2 m', p:15000, mua:'cho'},
+    {n:'Keo nến', q:'3 thanh', p:10000, mua:'cho'}
+  ],
+  steps:[
+    {t:'Rửa và hong khô lọ', d:'Phải khô hoàn toàn bên trong, hơi nước đọng sẽ làm mờ lọ khi bật đèn.'},
+    {t:'Quấn dây gai quanh cổ lọ', d:'Bắt đầu từ dưới, quấn sát vòng, chấm keo nến 3 điểm để cố định.'},
+    {t:'Nhét dây LED vào lọ', d:'Thả từ đáy lên, dàn đều, để hộp pin nằm ngoài miệng lọ cho dễ thay.'},
+    {t:'Giấu hộp pin', d:'Dán hộp pin vào mặt sau lọ bằng băng dính 2 mặt, quay công tắc ra ngoài.'}
+  ],
+  loi:['Nhét cả hộp pin vào trong lọ — hết pin phải tháo hết dây ra.','Dùng dây LED cắm điện 220 V thay vì loại pin: nóng lọ, nguy hiểm nếu đổ.'],
+  bien:['Bỏ thêm một nắm bi thuỷ tinh xuống đáy: ánh sáng tán ra mềm hơn.']
+},
+{
+  id:'giadt', name:'Giá đỡ điện thoại từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Một khúc ống nước 27 mm cắt vát, sơn lại. Giữ điện thoại vững hơn mấy cái giá nhựa bán sẵn.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Cưa sắt','Giấy nhám','Khẩu trang (khi sơn)'],
+  skills:['cua','son'],
+  mats:[
+    {n:'Ống PVC Ø27 mm', q:'20 cm', p:8000, mua:'kimkhi'},
+    {n:'Giấy nhám #240', q:'1 tờ', p:5000, mua:'kimkhi'},
+    {n:'Sơn xịt', q:'1 chai nhỏ', p:35000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Cắt khúc ống dài 9 cm', d:'Cưa vuông, dũa phẳng hai đầu.'},
+    {t:'Cắt rãnh đặt máy', d:'Cắt một rãnh rộng 12 mm sâu 2 cm, nghiêng 15° so với trục ống.'},
+    {t:'Khoét lỗ luồn dây sạc', d:'Khoan lỗ 10 mm ở đáy rãnh để cắm sạc khi đang dựng máy.'},
+    {t:'Chà nhám toàn bộ', d:'Nhám kỹ cho hết chữ in trên ống, sơn mới bám.'},
+    {t:'Xịt sơn 2 lớp mỏng', d:'Xịt ngoài trời, cách 25 cm, lớp sau cách lớp trước 20 phút.'}
+  ],
+  loi:['Rãnh cắt rộng quá 14 mm: máy có ốp vào là đổ.','Xịt sơn một lớp dày: chảy thành vệt, phải nhám lại từ đầu.'],
+  bien:['Cắt ống Ø34 mm thì dựng được cả máy tính bảng.']
+},
+{
+  id:'tote', name:'Túi tote vải canvas khâu tay', cat:'May vá', diff:2, hours:2,
+  blurb:'Không cần máy khâu. Đường khâu tay mũi đột chắc hơn máy nếu làm đúng, và đẹp hơn hẳn túi chợ.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kim khâu tay số 5','Kéo cắt vải','Phấn vẽ vải','Bàn là'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Vải canvas 12 oz', q:'0,5 m khổ 1,5 m', p:55000, mua:'vai'},
+    {n:'Dây quai bản 3 cm', q:'1,2 m', p:20000, mua:'vai'},
+    {n:'Chỉ bền màu + kim', q:'1 bộ', p:15000, mua:'vai'},
+    {n:'Phấn vẽ vải', q:'1 viên', p:5000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Cắt 2 mảnh 38 × 42 cm', d:'Chừa 1,5 cm đường may mỗi cạnh. Là phẳng trước khi vẽ.'},
+    {t:'Gấp mép miệng túi', d:'Gấp 2 lần, mỗi lần 1,5 cm, là chết nếp rồi khâu một đường thẳng.'},
+    {t:'Khâu quai vào thân', d:'Đặt quai cách mép bên 9 cm, khâu ô chữ nhật có gạch chéo — chỗ này chịu toàn bộ tải.'},
+    {t:'Úp hai mặt vào nhau', d:'Mặt phải úp vào trong, khâu ba cạnh bằng mũi đột, mũi 3 mm.'},
+    {t:'Gấp đáy tạo hông túi', d:'Gấp góc đáy thành tam giác, khâu ngang 8 cm để túi đứng được.'},
+    {t:'Lộn phải và là lại', d:'Lộn ra, đẩy góc cho vuông, là phẳng toàn bộ.'}
+  ],
+  loi:['Khâu quai bằng một đường thẳng: xách nặng vài lần là bung.','Quên chừa đường may, túi ra nhỏ hơn dự tính 3 cm mỗi chiều.'],
+  bien:['Thêm một túi con bên trong: cắt mảnh 15×18 cm, khâu lên mặt trong trước khi ráp thân.']
+},
+{
+  id:'banlaptop', name:'Bàn laptop gấp gọn để trên giường', cat:'Nội thất', diff:2, hours:4,
+  blurb:'Mặt MDF phủ melamine + chân sắt gấp bán sẵn. Gấp lại nhét được xuống gầm giường.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Khoan bắt vít','Tua vít','Giấy nhám','Thước'],
+  skills:['do','khoan'],
+  mats:[
+    {n:'Ván MDF phủ melamine 60 × 35 cm', q:'1 tấm', p:90000, mua:'go', note:'nhờ cắt sẵn và dán cạnh'},
+    {n:'Chân sắt gấp', q:'2 cái', p:150000, mua:'mang'},
+    {n:'Bản lề nhỏ', q:'2 cái', p:30000, mua:'kimkhi'},
+    {n:'Vít 4 × 16 mm', q:'16 con', p:15000, mua:'kimkhi'},
+    {n:'Nút cao su chống trượt', q:'4 cái', p:20000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Kiểm tra tấm ván', d:'Đo lại kích thước, chà nhẹ 4 cạnh nếu chưa dán cạnh.'},
+    {t:'Đánh dấu vị trí chân', d:'Cách mép ngắn 5 cm, cách mép dài 4 cm, gấp vào trong không vướng.'},
+    {t:'Khoan mồi trước khi bắt vít', d:'Mũi 2,5 mm, sâu 12 mm. Không khoan mồi là MDF nứt.'},
+    {t:'Bắt chân gấp', d:'Siết đều bốn góc, thử gấp mở vài lần xem có kẹt không.'},
+    {t:'Dán nút cao su', d:'Dán mặt dưới bốn góc để không xước chăn ga.'},
+    {t:'Thử tải', d:'Đặt 5 kg lên giữa mặt bàn, để 10 phút xem có võng không.'}
+  ],
+  loi:['Bắt vít thẳng vào MDF không khoan mồi — nứt toác mặt dưới.','Vít dài hơn 16 mm: đâm thủng lên mặt bàn.'],
+  bien:['Khoét một rãnh thoát nhiệt 4×12 cm ở mép trong, máy chạy mát hơn hẳn.']
+},
+{
+  id:'chautuoi', name:'Chậu cây tự tưới từ chai nhựa', cat:'Cây cối', diff:1, hours:1,
+  blurb:'Cắt đôi chai nước, úp ngược phần trên. Đi vắng một tuần cây vẫn sống.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Dao rọc giấy','Kéo'],
+  skills:['cat'],
+  mats:[
+    {n:'Chai nhựa 1,5 L', q:'1 cái', p:0, mua:'nha', note:'tận dụng chai cũ'},
+    {n:'Dây cotton bấc đèn', q:'20 cm', p:5000, mua:'cho', note:'dây giày cotton cũng được'},
+    {n:'Đất trồng', q:'1 kg', p:20000, mua:'cho'}
+  ],
+  steps:[
+    {t:'Cắt đôi chai', d:'Cắt cách đáy khoảng 12 cm, cắt vòng đều tay cho khỏi méo.'},
+    {t:'Luồn dây bấc qua nắp', d:'Khoan lỗ giữa nắp, luồn dây, để thò xuống 8 cm và lên trên 5 cm.'},
+    {t:'Úp ngược phần trên vào phần đáy', d:'Phần cổ chai chúc xuống, dây bấc chạm đáy nước.'},
+    {t:'Đổ đất và trồng cây', d:'Đổ nước vào ngăn dưới đến 2/3, tưới đẫm lần đầu từ trên xuống cho dây ngấm.'}
+  ],
+  loi:['Dùng dây nylon thay cotton: không hút nước, cây vẫn chết khô.','Đổ nước ngập cả cổ chai — đất úng, thối rễ trong một tuần.'],
+  bien:['Bọc giấy bạc quanh ngăn nước để ánh sáng không lọt vào, đỡ lên rêu.']
+},
+{
+  id:'dieuhoa', name:'Quạt mát mini từ thùng xốp và đá', cat:'Điện & mát', diff:2, hours:2,
+  blurb:'Không phải điều hoà, nhưng đứng trước nó thì mát thật. Hợp phòng nhỏ, ban công, quán vỉa hè.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Dao rọc giấy','Bút dạ','Băng keo bạc'],
+  skills:['cat','dien','dan'],
+  mats:[
+    {n:'Thùng xốp 20 lít có nắp', q:'1 cái', p:40000, mua:'cho'},
+    {n:'Quạt USB 12 V', q:'1 cái', p:90000, mua:'dien', note:'loại quạt tản nhiệt 12 cm là vừa'},
+    {n:'Ống nhựa Ø90 mm', q:'2 khúc 10 cm', p:30000, mua:'kimkhi'},
+    {n:'Băng keo bạc', q:'1 cuộn', p:25000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Vạch lỗ trên nắp thùng', d:'Một lỗ tròn vừa quạt ở giữa, hai lỗ Ø90 hai bên làm miệng thổi.'},
+    {t:'Khoét lỗ', d:'Dùng dao rọc giấy khoét từ trong ra, cắt nhỏ hơn vạch 2 mm rồi gọt dần.'},
+    {t:'Lắp quạt thổi vào trong', d:'Chiều gió phải thổi xuống thùng, dán kín mép bằng băng keo bạc.'},
+    {t:'Cắm hai ống thổi', d:'Ống hướng chếch lên 30°, dán kín chân ống.'},
+    {t:'Cho đá và chạy thử', d:'Bỏ 2–3 chai nước đá đông sẵn vào, đậy nắp, cắm điện. Dùng chai đá thay vì đá rời để không đọng nước.'}
+  ],
+  warns:[{t:'Điện và nước ở gần nhau', d:'Chỉ dùng quạt 5 V/12 V với adapter, không đấu trực tiếp 220 V vào thùng có nước đá.'}],
+  loi:['Đổ đá rời: tan ra thành nước, nghiêng thùng là tràn vào quạt.','Lắp quạt hút ngược chiều — thổi hơi nóng ra, càng bí.'],
+  bien:['Thay hai ống bằng một ống Ø110: gió tập trung, xa hơn nhưng hẹp hơn.']
+},
+{
+  id:'kegiay', name:'Kệ giày từ ống nhựa PVC', cat:'Đồ dùng', diff:1, hours:2,
+  blurb:'Mấy khúc ống Ø90 dán chồng lên nhau thành tổ ong. Nhét vừa 8–10 đôi trong góc nhỏ.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Cưa tay','Giấy nhám','Kẹp'],
+  skills:['cua','dan'],
+  mats:[
+    {n:'Ống PVC Ø90 mm', q:'2 m', p:70000, mua:'kimkhi'},
+    {n:'Keo dán PVC', q:'1 lọ', p:25000, mua:'kimkhi'},
+    {n:'Sơn xịt (tuỳ chọn)', q:'1 chai', p:35000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Cắt ống thành 10 khúc 30 cm', d:'Cắt vuông góc, dũa sạch ba-via.'},
+    {t:'Chà nhám mặt tiếp xúc', d:'Nhám hai bên hông mỗi khúc ở chỗ sẽ dán, keo mới bám.'},
+    {t:'Dán tầng dưới trước', d:'Bốn khúc nằm ngang, dán vào nhau, kẹp lại 20 phút.'},
+    {t:'Xếp tầng trên so le', d:'Ba khúc tầng hai, hai khúc tầng ba, mỗi tầng lùi vào nửa ống.'}
+  ],
+  loi:['Dán khi mặt ống còn bóng: keo không ăn, tầng trên rơi.','Xếp thẳng cột thay vì so le — cả khối đổ nghiêng.'],
+  bien:['Giày cao cổ thì cắt khúc 35 cm cho tầng dưới cùng.']
+},
+{
+  id:'voinuoc', name:'Sửa vòi nước rỉ (thay gioăng)', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'90% ca vòi rỉ là do gioăng cao su mòn. Mất 20 phút và 20 nghìn, không cần gọi thợ.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Mỏ lết','Tua vít dẹt','Khăn khô'],
+  skills:['oc'],
+  mats:[
+    {n:'Bộ gioăng cao su', q:'1 bộ', p:15000, mua:'kimkhi', note:'mang gioăng cũ ra hàng để mua đúng cỡ'},
+    {n:'Băng tan', q:'1 cuộn', p:8000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Khoá van tổng', d:'Khoá van dưới bồn hoặc van tổng cả nhà, mở vòi cho xả hết nước còn lại.'},
+    {t:'Bịt lỗ thoát sàn', d:'Nhét khăn xuống lỗ thoát, ốc nhỏ rơi xuống là mất luôn.'},
+    {t:'Tháo tay gạt và ruột vòi', d:'Cạy nắp nhựa che vít, tháo vít, rút ruột vòi ra.'},
+    {t:'Thay gioăng', d:'Lấy gioăng cũ ra, lau sạch rãnh, lắp gioăng mới đúng cỡ.'},
+    {t:'Quấn băng tan và lắp lại', d:'Quấn 5–7 vòng theo chiều siết ren, lắp lại, mở van từ từ và kiểm tra.'}
+  ],
+  loi:['Quên khoá van tổng — mở ra là nước phun đầy nhà.','Quấn băng tan ngược chiều ren: siết vào là băng tuột hết.'],
+  bien:['Vòi cảm ứng pin: rỉ thường do van điện, thay gioăng không ăn thua.']
+},
+{
+  id:'ghelunglay', name:'Chữa ghế gỗ lung lay', cat:'Sửa chữa', diff:2, hours:2,
+  blurb:'Ghế lung lay không phải vì gãy, mà vì mộng khô keo. Tháo ra, làm sạch, dán lại là chắc như mới.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Búa cao su','Kẹp dây (dây thừng + que xoắn cũng được)','Đục nhỏ','Giấy nhám'],
+  skills:['dan','do'],
+  mats:[
+    {n:'Keo sữa dán gỗ', q:'1 lọ 100 ml', p:35000, mua:'kimkhi'},
+    {n:'Chốt gỗ Ø8 mm', q:'10 cái', p:15000, mua:'go'},
+    {n:'Giấy nhám #120', q:'2 tờ', p:10000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Đánh dấu từng mối trước khi tháo', d:'Ghi số bằng bút chì lên chân và thanh ngang, lắp lại sẽ không lẫn.'},
+    {t:'Tháo rời mối lỏng', d:'Gõ búa cao su, không dùng búa sắt. Chỉ tháo mối nào lung lay.'},
+    {t:'Cạo sạch keo cũ', d:'Đục nhẹ và nhám cho tới khi thấy thớ gỗ, keo mới không bám lên keo cũ.'},
+    {t:'Bôi keo và lắp lại', d:'Bôi mỏng đều cả hai mặt mộng, lắp vào, gõ nhẹ cho khít.'},
+    {t:'Xiết kẹp và chờ 24 giờ', d:'Xiết vừa tay, lau keo tràn bằng khăn ẩm ngay, để khô trọn một ngày trước khi ngồi.'}
+  ],
+  loi:['Bôi keo đè lên keo cũ: hai ngày sau lại lung lay y như trước.','Đóng đinh cho nhanh — nứt chân ghế, sau này không sửa được nữa.'],
+  bien:['Mộng rộng quá: chèn thêm một lát gỗ mỏng phết keo, đừng nhồi giấy.']
+},
+{
+  id:'bangghim', name:'Bảng ghim treo tường bọc vải', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Tấm xốp ép bọc vải, ghim được giấy tờ, ảnh, hoá đơn. Treo cạnh bàn làm việc.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kéo','Súng bắn ghim hoặc keo nến','Thước'],
+  skills:['do','cat','dan'],
+  mats:[
+    {n:'Tấm xốp ép 40 × 60 cm', q:'1 tấm', p:45000, mua:'mang'},
+    {n:'Vải bố hoặc vải lanh', q:'0,5 m', p:30000, mua:'vai'},
+    {n:'Ghim mũ nhựa', q:'1 hộp', p:15000, mua:'cho'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:10000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Cắt vải to hơn tấm mỗi bề 8 cm', d:'Là phẳng vải trước khi bọc, nếp nhăn sẽ lộ hết khi căng.'},
+    {t:'Bọc và căng vải', d:'Kéo căng đều bốn cạnh, ghim hoặc dán keo mặt sau, gấp góc như gói quà.'},
+    {t:'Dán băng dính 2 mặt', d:'Dán 6 điểm mặt sau: bốn góc và hai điểm giữa.'},
+    {t:'Treo lên tường', d:'Lau sạch tường, ấn giữ 30 giây mỗi điểm. Tường sơn bụi thì nên bắt vít thay vì dán.'}
+  ],
+  loi:['Dán lên tường sơn bụi: hai hôm sau rơi cả bảng.','Căng vải một bên trước rồi mới bên kia — vải lệch thớ, nhăn chéo.'],
+  bien:['Chia ô bằng dây ruy băng đóng ghim chéo, ảnh cài vào không cần ghim.']
+},
+{
+  id:'giadao', name:'Giá dao nam châm gắn tường', cat:'Bếp', diff:2, hours:2,
+  blurb:'Thanh gỗ giấu nam châm bên trong, dao dính lên mặt gỗ. Sạch hơn ống cắm dao, dao lâu cùn hơn.',
+  flags:{onao:2,bui:2,chungcu:true},
+  tools:['Khoan + mũi gỗ 10 mm','Đục','Giấy nhám','Ni-vô'],
+  skills:['do','khoan','dan','son'],
+  mats:[
+    {n:'Thanh gỗ 40 × 6 × 2 cm', q:'1 thanh', p:45000, mua:'go', note:'gỗ thông hoặc sồi, mặt phẳng'},
+    {n:'Nam châm neodymium Ø10×3 mm', q:'10 viên', p:50000, mua:'mang'},
+    {n:'Keo epoxy 2 thành phần', q:'1 bộ nhỏ', p:30000, mua:'kimkhi'},
+    {n:'Dầu lau gỗ thực phẩm', q:'50 ml', p:45000, mua:'mang', note:'dầu khoáng food-grade, dao chạm vào an toàn'},
+    {n:'Vít nở 6 mm', q:'2 bộ', p:8000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Vạch 10 điểm cách đều mặt sau', d:'Cách nhau 3,5 cm dọc theo tim thanh gỗ. Nam châm nằm ở mặt SAU, không xuyên ra mặt trước.'},
+    {t:'Khoét hốc sâu 3,5 mm', d:'Mũi gỗ 10 mm, dán băng dính lên mũi làm cữ độ sâu. Chừa ít nhất 4 mm gỗ về phía mặt trước.'},
+    {t:'Thử lực hút trước khi dán', d:'Đặt nam châm vào hốc, úp dao lên mặt trước. Dao dính chắc thì mới trộn keo.'},
+    {t:'Dán nam châm bằng epoxy', d:'Chú ý mọi viên cùng chiều cực. Lau sạch keo tràn, chờ khô 30 phút.'},
+    {t:'Chà nhám và lau dầu', d:'Nhám #240 toàn bộ, lau 2 lớp dầu thực phẩm, chờ khô 4 giờ.'},
+    {t:'Bắt lên tường', d:'Cách mặt bếp ít nhất 40 cm, ni-vô cho thẳng, thử treo dao nặng nhất trước.'}
+  ],
+  warns:[{t:'Khoét quá sâu là hỏng cả thanh', d:'Còn dưới 3 mm gỗ ở mặt trước thì nam châm sẽ lộ hoặc làm nứt gỗ. Làm cữ độ sâu, đừng ước lượng bằng mắt.'},
+         {t:'Không lắp trong tầm với của trẻ con', d:'Dao dính trên tường rất dễ gạt rơi. Lắp cao trên 1,5 m hoặc bỏ dự án này.'}],
+  loi:['Dán nam châm ngược cực nhau: chúng đẩy nhau, keo chưa khô đã lệch.','Dùng keo 502 thay epoxy — bở, vài tháng là nam châm rơi trong hốc.'],
+  bien:['Không muốn khoét: dán nam châm lên mặt sau rồi ốp thêm một tấm ván mỏng 3 mm che lại.']
+},
+{
+  id:'thotgo', name:'Phục hồi thớt gỗ bằng dầu', cat:'Bếp', diff:1, hours:1,
+  blurb:'Thớt xám, nứt chân chim, ám mùi — chà nhám rồi nuôi dầu là về gần như mới. Làm 20 phút, chờ qua đêm.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Giấy nhám #120 và #240','Khăn cotton cũ','Chanh + muối hạt'],
+  skills:['son'],
+  mats:[
+    {n:'Dầu khoáng food-grade', q:'100 ml', p:60000, mua:'mang', note:'không dùng dầu ăn — dầu ăn ôi và bốc mùi'},
+    {n:'Sáp ong (tuỳ chọn)', q:'20 g', p:30000, mua:'mang', note:'trộn với dầu thành sáp bảo vệ'},
+    {n:'Giấy nhám', q:'2 tờ mỗi cỡ', p:15000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Khử mùi bằng chanh và muối', d:'Rắc muối hạt, chà nửa quả chanh khắp mặt thớt, để 10 phút rồi rửa sạch.'},
+    {t:'Hong thật khô', d:'Dựng đứng cho thoáng hai mặt, ít nhất 4 giờ. Chà nhám khi còn ẩm là xù thớ.'},
+    {t:'Chà nhám #120 rồi #240', d:'Chà xuôi thớ, đều tay, tới khi hết vết xám và vết dao sâu.'},
+    {t:'Lau dầu lớp đầu', d:'Đổ dầu trực tiếp lên mặt thớt, xoa khắp cả cạnh và mặt dưới, để ngấm 30 phút rồi lau khô phần thừa.'},
+    {t:'Lặp lại 3 lớp, chờ qua đêm', d:'Mỗi lớp cách nhau 4 giờ. Xong để đứng qua đêm rồi mới dùng.'}
+  ],
+  warns:[{t:'Không dùng dầu ăn thường', d:'Dầu ăn (đậu nành, hướng dương, ô liu) bị ôi trong gỗ, vài tuần là thớt bốc mùi khét không cứu được.'}],
+  loi:['Ngâm thớt trong nước cho sạch trước khi làm — gỗ nứt toác khi khô.','Lau dầu khi thớt còn ẩm: dầu không ngấm, chỉ đọng thành váng dính.'],
+  bien:['Thớt nứt sâu: nhét mạt cưa trộn keo sữa vào khe, chà phẳng rồi mới nuôi dầu.']
+},
+{
+  id:'tuiluoi', name:'Túi lưới đi chợ', cat:'May vá', diff:2, hours:2,
+  blurb:'Một mảnh lưới co giãn + dây quai. Gấp bằng nắm tay, đựng được 5 kg rau củ, thay hẳn túi nilon.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kim khâu tay','Kéo cắt vải','Kẹp ghim'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Vải lưới co giãn', q:'0,5 m', p:40000, mua:'vai', note:'loại lưới may đồ thể thao, mắt 3–5 mm'},
+    {n:'Dây dù bản 2 cm', q:'1,2 m', p:18000, mua:'vai'},
+    {n:'Chỉ bền + kim', q:'1 bộ', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Cắt một mảnh 40 × 80 cm', d:'Cắt dọc theo chiều co giãn nằm ngang thân túi, túi mới nở ra được.'},
+    {t:'Gập đôi và khâu hai cạnh', d:'Mặt trái ra ngoài, khâu mũi đột hai cạnh bên, mũi 3 mm, khâu hai lượt cho chắc.'},
+    {t:'Viền miệng túi', d:'Gập mép 1,5 cm, khâu vòng quanh. Lưới không tưa nhưng viền cho đứng miệng.'},
+    {t:'Khâu quai', d:'Cắt dây làm đôi, mỗi quai 60 cm, đặt cách mép bên 8 cm, khâu ô chữ nhật gạch chéo.'},
+    {t:'Thử tải 5 kg', d:'Bỏ 5 chai nước 1 lít vào xách thử. Đường khâu quai là chỗ đứt đầu tiên.'}
+  ],
+  loi:['Cắt sai chiều co giãn: túi không nở, đựng được nửa số đồ.','Khâu một lượt: lưới giãn làm mũi chỉ hở, rau lọt ra ngoài.'],
+  bien:['Khâu thêm một túi con ở đáy, lộn ngược nhét cả túi vào để gấp gọn bỏ ba lô.']
+},
+{
+  id:'maphanh', name:'Thay má phanh xe đạp', cat:'Xe cộ', diff:1, hours:1,
+  blurb:'Phanh kêu ken két hoặc bóp hết tay mới ăn là má mòn. Việc 20 phút, không cần ra tiệm.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Lục giác 5 mm','Kìm','Khăn lau'],
+  skills:['oc','do'],
+  mats:[
+    {n:'Má phanh xe đạp', q:'1 cặp', p:60000, mua:'xe', note:'mang má cũ ra tiệm để mua đúng loại (V-brake hay đĩa)'},
+    {n:'Cồn lau đĩa (nếu phanh đĩa)', q:'50 ml', p:20000, mua:'xe'}
+  ],
+  steps:[
+    {t:'Xem còn bao nhiêu má', d:'Rãnh chỉ báo mòn trên má phanh biến mất là phải thay. Dưới 1 mm cao su là quá muộn.'},
+    {t:'Nới dây phanh', d:'Bóp hai càng phanh vào nhau, tháo đầu dây ra khỏi ngàm cho rộng chỗ.'},
+    {t:'Tháo má cũ, lắp má mới', d:'Nới ốc lục giác, rút má cũ. Lắp má mới đúng chiều mũi tên quay tới.'},
+    {t:'Canh má cách vành 1 mm', d:'Mặt má áp đều vào vành, mép trên cách mép vành 1 mm, hơi chụm mũi về phía trước.'},
+    {t:'Siết ốc và thử', d:'Siết chặt, bóp phanh vài lần rồi thử chạy chậm. Phanh phải ăn khi bóp được nửa tay.'}
+  ],
+  warns:[{t:'Dính dầu vào má phanh là bỏ', d:'Má phanh dính dầu mỡ thì trượt, chùi cách nào cũng không hết. Đừng bôi trơn gần má.'}],
+  loi:['Lắp má cao chạm lốp: mài thủng lốp sau vài cây số.','Quên siết lại ốc sau khi canh — má xoay ra khi phanh gấp.'],
+  bien:['Phanh đĩa: thay theo bộ, bóp piston về vị trí bằng dụng cụ hoặc cán tua vít bọc vải.']
+},
+{
+  id:'khoakeo', name:'Chữa khoá kéo bị tuột, bị kẹt', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'Áo khoác, ba lô, vali hỏng khoá thường bị vứt đi oan. 90% ca chỉ cần bóp lại con chạy.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kìm mũi nhọn','Kim khâu','Bút chì'],
+  skills:['khau','oc'],
+  mats:[
+    {n:'Con chạy khoá kéo thay thế', q:'1 bộ vài cỡ', p:25000, mua:'cho', note:'xem số in trên con chạy cũ (3, 5, 8...) để mua đúng cỡ'},
+    {n:'Chỉ bền + kim', q:'1 bộ', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Xác định hỏng ở đâu', d:'Kéo lên mà răng không ăn khớp là con chạy rộng. Răng khoá gãy hoặc thiếu là phải thay cả dây.'},
+    {t:'Kẹt thì bôi trơn bằng bút chì', d:'Chà ruột bút chì lên răng khoá hai bên, kéo lên xuống vài lần. Không dùng dầu, dầu bám bụi.'},
+    {t:'Bóp con chạy', d:'Kìm mũi nhọn bóp nhẹ hai má con chạy, mỗi bên một chút, thử kéo sau mỗi lần bóp. Bóp quá tay là kẹt cứng.'},
+    {t:'Thay con chạy nếu bóp không ăn', d:'Cắt chỉ chặn đầu trên, rút con chạy cũ ra, luồn con mới vào đúng chiều.'},
+    {t:'Khâu chặn đầu mới', d:'Khâu 6–8 mũi ngang qua răng khoá ở đầu trên làm chốt chặn, thay cho chốt kim loại đã tháo.'}
+  ],
+  loi:['Bóp con chạy hết cỡ một lần: kẹt cứng, kéo không nổi, phải cắt bỏ.','Quên khâu chốt chặn đầu trên — con chạy tuột hẳn ra ngoài.'],
+  bien:['Răng khoá gãy giữa dây: thay cả dây khoá, nhưng ra tiệm sửa quần áo rẻ hơn tự làm.']
+},
+{
+  id:'denpin', name:'Đèn cảm biến chạy pin cho cầu thang, tủ', cat:'Điện & mát', diff:1, hours:1,
+  blurb:'Không đi dây, không đục tường. Dán lên là chỗ tối nào cũng tự sáng khi có người đi qua.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Khăn cồn','Thước','Bút chì'],
+  skills:['dan','do'],
+  mats:[
+    {n:'Đèn LED cảm biến chuyển động chạy pin', q:'3 cái', p:180000, mua:'mang', note:'loại pin AAA, có nam châm hoặc băng dính sẵn'},
+    {n:'Pin AAA', q:'9 viên', p:45000, mua:'cho'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:15000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Chọn chỗ đặt', d:'Cầu thang: đặt ở bậc thứ 3 tính từ dưới và bậc thứ 3 từ trên. Tủ: đặt ở nóc, hắt xuống.'},
+    {t:'Thử trước khi dán', d:'Lắp pin, cầm tay đưa qua đưa lại ở đúng vị trí định dán, xem có bắt được người không.'},
+    {t:'Lau sạch mặt dán', d:'Lau cồn, chờ khô hẳn. Mặt bụi là băng dính chỉ bám được vài ngày.'},
+    {t:'Dán và canh góc', d:'Cảm biến hướng ra chỗ người đi qua, không hướng vào tường đối diện.'},
+    {t:'Đi thử ban đêm', d:'Tắt hết đèn, đi lên xuống một lượt. Chỗ nào còn tối thì thêm một đèn nữa.'}
+  ],
+  loi:['Dán quá cao: cảm biến chỉ bắt được đầu người, đi lom khom là không sáng.','Dùng pin cũ lẫn pin mới — đèn sáng yếu và chết pin nhanh.'],
+  bien:['Có ổ điện gần: dùng loại cắm điện kèm cảm biến, khỏi thay pin ba tháng một lần.']
+},
+{
+  id:'gomday', name:'Gom dây điện gầm bàn làm việc', cat:'Đồ dùng', diff:1, hours:1,
+  blurb:'Cái bàn sạch sẽ hơn thấy rõ chỉ sau một buổi tối. Không mua gì đắt, chủ yếu là sắp lại cho có thứ tự.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Kéo','Khăn cồn','Bút dạ'],
+  skills:['dan','do'],
+  mats:[
+    {n:'Máng nhựa luồn dây', q:'1 m', p:35000, mua:'dien'},
+    {n:'Dây rút nhựa', q:'1 gói 100 cái', p:20000, mua:'kimkhi'},
+    {n:'Băng dính 2 mặt xốp', q:'1 cuộn', p:15000, mua:'kimkhi'},
+    {n:'Nhãn dán dây', q:'1 tờ', p:10000, mua:'cho', note:'băng giấy trắng viết bút dạ cũng được'}
+  ],
+  steps:[
+    {t:'Rút hết ra và phân loại', d:'Rút từng dây, dán nhãn tên thiết bị vào đầu dây ngay lúc rút. Đây là bước tiết kiệm nhiều thời gian nhất về sau.'},
+    {t:'Bỏ dây thừa', d:'Dây của thiết bị đã bán, đã hỏng — bỏ hẳn ra khỏi hộp. Đừng cuộn lại cất vào gầm bàn.'},
+    {t:'Gắn ổ cắm lên gầm bàn', d:'Lau sạch mặt gỗ, dán băng dính 2 mặt xốp, ép ổ cắm lên. Ổ rời khỏi sàn là hết bụi và nước.'},
+    {t:'Luồn dây vào máng', d:'Đi dây theo cạnh bàn, cắt máng vừa chiều dài, dán lên.'},
+    {t:'Bó phần dây thừa', d:'Cuộn tròn phần thừa, buộc dây rút, treo dưới gầm bàn. Đừng cuộn quá chặt sát đầu cắm.'}
+  ],
+  loi:['Buộc dây rút quá chặt: dây sạc gãy ngầm ở chỗ buộc sau vài tháng.','Không dán nhãn — lần sau muốn rút một thiết bị lại phải mò cả bó.'],
+  bien:['Bàn hay kê lại: dùng khoá dán velcro thay dây rút, tháo ra buộc lại thoải mái.']
+},
+{
+  id:'gianphoi', name:'Giàn phơi gấp cho ban công nhỏ', cat:'Nội thất', diff:3, hours:4,
+  blurb:'Khung gỗ gấp áp tường, mở ra phơi được hai sào, gấp lại dày 6 cm. Hợp ban công chung cư chật.',
+  flags:{onao:3,bui:2,chungcu:false},
+  tools:['Khoan búa','Cưa tay','Ni-vô','Tua vít','Thước'],
+  skills:['do','cua','khoan','oc'],
+  mats:[
+    {n:'Thanh gỗ 4 × 4 cm', q:'3 m', p:120000, mua:'go'},
+    {n:'Ống inox Ø25 mm', q:'2 thanh 1,2 m', p:140000, mua:'kimkhi'},
+    {n:'Bản lề lá 3 inch', q:'4 cái', p:60000, mua:'kimkhi'},
+    {n:'Vít nở 8 mm', q:'6 bộ', p:25000, mua:'kimkhi'},
+    {n:'Móc gấp và chốt hãm', q:'2 bộ', p:50000, mua:'kimkhi'},
+    {n:'Sơn chống gỉ / dầu gỗ ngoài trời', q:'250 ml', p:85000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Đo ban công, chốt kích thước', d:'Đo chiều rộng lọt lòng, trừ mỗi bên 5 cm. Chiều vươn ra không quá 60 cm nếu không muốn vướng lối đi.'},
+    {t:'Cắt gỗ và làm khung chữ nhật', d:'Hai thanh dọc, hai thanh ngang, bắt vít góc. Kiểm tra hai đường chéo bằng nhau rồi mới siết.'},
+    {t:'Khoan lỗ đặt sào', d:'Khoan xuyên hai thanh dọc, cách nhau 25 cm, luồn ống inox qua rồi chốt lại.'},
+    {t:'Sơn hoặc lau dầu ngoài trời', d:'Ban công dính mưa nắng, không sơn thì một mùa mưa là mục. Sơn 2 lớp, chờ khô hẳn.'},
+    {t:'Bắt bản lề lên tường', d:'Dò dây điện, khoan, đóng nở 8 mm. Bắt bản lề ở độ cao ngang vai để phơi khỏi với.'},
+    {t:'Lắp chốt hãm và thử tải', d:'Chốt giữ khung ở góc mở 90°. Treo thử 6 kg quần áo ướt, để 30 phút xem tường có rạn không.'}
+  ],
+  warns:[{t:'Không lắp lên tường gạch nhẹ hoặc thạch cao', d:'Quần áo ướt nặng 8–10 kg, cộng lực đòn bẩy khi vươn ra. Tường không đặc thì cả giàn bung ra rơi xuống dưới.'},
+         {t:'Ban công tầng cao: mọi thứ rơi đều nguy hiểm chết người', d:'Chốt hãm phải là chốt kim loại có khoá, không dùng dây buộc tạm.'}],
+  loi:['Không kiểm hai đường chéo: khung vênh, gấp vào không sát tường.','Dùng vít nở nhựa 6 mm cho tải nặng — nở tuột dần theo từng lần phơi.'],
+  bien:['Không được khoan tường: làm giàn đứng chống trần kiểu thanh căng, tải nhẹ hơn nhưng không phải đục.']
+},
+{
+  id:'bonrau', name:'Bồn rau thùng xốp ban công', cat:'Cây cối', diff:2, hours:2,
+  blurb:'Ba thùng xốp là đủ rau ăn lá cho hai người. Điểm khác biệt duy nhất so với trồng hỏng: thoát nước và đất.',
+  flags:{onao:1,bui:2,chungcu:true},
+  tools:['Dao rọc giấy','Xẻng nhỏ','Bình tưới'],
+  skills:['cat','do'],
+  mats:[
+    {n:'Thùng xốp có nắp', q:'3 cái', p:90000, mua:'cho', note:'xin ở hàng hoa quả thường được cho không'},
+    {n:'Đất sạch trồng rau', q:'20 kg', p:120000, mua:'cho'},
+    {n:'Phân trùn quế', q:'5 kg', p:60000, mua:'mang'},
+    {n:'Hạt giống rau ăn lá', q:'3 gói', p:30000, mua:'cho', note:'cải ngọt, xà lách, rau muống là dễ nhất'},
+    {n:'Lưới chắn côn trùng', q:'2 m', p:40000, mua:'mang'}
+  ],
+  steps:[
+    {t:'Khoét lỗ thoát nước', d:'Khoét 6 lỗ Ø1 cm ở thành thùng, cách đáy 3 cm — không khoét ở đáy. Chừa 3 cm nước dưới đáy làm hồ dự trữ.'},
+    {t:'Lót đáy bằng nắp thùng cắt nhỏ', d:'Bẻ vụn nắp xốp rải một lớp 3 cm dưới đáy cho thoáng, rễ không úng.'},
+    {t:'Trộn đất', d:'7 phần đất sạch, 3 phần phân trùn quế, trộn đều, đổ đầy cách miệng 5 cm.'},
+    {t:'Gieo hạt', d:'Gieo thưa, phủ một lớp đất mỏng bằng đúng đường kính hạt. Gieo dày là mọc lên tranh nhau rồi chết cả đám.'},
+    {t:'Che lưới 10 ngày đầu', d:'Lưới chắn bướm đẻ trứng và chắn mưa xối. Tưới đẫm buổi sáng, chiều tưới nhẹ nếu nắng gắt.'},
+    {t:'Tỉa bớt khi cây 3 lá', d:'Nhổ bớt cho mỗi cây cách nhau 10 cm. Cây nhổ ra ăn được luôn.'}
+  ],
+  loi:['Khoét lỗ thoát ở đáy thùng: nước chảy hết, ngày nắng phải tưới ba lần.','Dùng đất vườn lấy dưới quê: nén chặt, thoát nước kém, mang theo cả sâu.'],
+  bien:['Ban công nắng gắt cả ngày: kê thùng cách sàn 5 cm và che lưới đen 50% buổi trưa.']
+},
+{
+  id:'remcua', name:'Rèm cửa may một mảnh', cat:'May vá', diff:2, hours:3,
+  blurb:'Rèm may sẵn thường không vừa cửa nhà mình. Tự may một mảnh, đúng khổ, đúng màu, rẻ hơn một nửa.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Thước dây','Kéo cắt vải','Kim khâu hoặc máy khâu','Bàn là','Phấn vẽ vải'],
+  skills:['do','cat','khau'],
+  mats:[
+    {n:'Vải rèm khổ 1,5 m', q:'theo số đo', p:180000, mua:'vai', note:'vải bố hoặc vải gấm; muốn tối phòng thì chọn loại có lớp chắn sáng'},
+    {n:'Dây đai xếp ly', q:'theo chiều rộng', p:45000, mua:'vai'},
+    {n:'Móc rèm', q:'1 bộ', p:35000, mua:'vai'},
+    {n:'Chỉ cùng màu', q:'1 cuộn', p:12000, mua:'vai'}
+  ],
+  steps:[
+    {t:'Đo cửa', d:'Chiều rộng vải = chiều rộng thanh treo × 2 (để rèm có nếp). Chiều dài = từ thanh treo tới sàn, trừ 1 cm cho khỏi quét đất.'},
+    {t:'Cắt vải, chừa mép', d:'Chừa 5 cm mỗi cạnh bên, 15 cm cho gấu dưới, 8 cm cho mép trên.'},
+    {t:'Gấp và là mép hai bên', d:'Gấp hai lần 2,5 cm, là chết nếp, khâu một đường dọc.'},
+    {t:'Làm gấu dưới', d:'Gấp 7,5 cm hai lần, là, khâu. Gấu dày làm rèm rủ thẳng, không phất phơ.'},
+    {t:'Khâu dây đai xếp ly lên mép trên', d:'Gấp mép trên 4 cm, ốp dây đai lên mặt trái, khâu hai đường trên và dưới dây.'},
+    {t:'Rút ly và treo thử', d:'Kéo dây rút cho ly xếp đều tới đúng chiều rộng thanh, buộc chặt, cài móc cách nhau 8 cm rồi treo lên.'}
+  ],
+  loi:['Đo chiều rộng bằng đúng thanh treo: rèm kéo ra căng phẳng như tấm bạt, không có nếp.','Khâu gấu trước khi treo thử — rèm dài chấm sàn hoặc ngắn hụt, tháo ra làm lại.'],
+  bien:['Không muốn xếp ly: dùng vòng khoen ore, đục 8–10 khoen cách đều, nếp rèm to và hiện đại hơn.']
+},
+{
+  id:'neptruot', name:'Dán nẹp chống trượt cầu thang', cat:'Sửa chữa', diff:1, hours:1,
+  blurb:'Cầu thang gạch bóng là chỗ ngã nguy hiểm nhất trong nhà, nhất là với người già và trẻ con. Một buổi chiều là xong cả thang.',
+  flags:{onao:1,bui:1,chungcu:true},
+  tools:['Thước','Kéo cắt khoẻ','Khăn cồn','Con lăn hoặc giẻ khô'],
+  skills:['do','dan'],
+  mats:[
+    {n:'Băng nhám chống trượt bản 5 cm', q:'10 m', p:120000, mua:'mang', note:'đo số bậc × chiều rộng bậc rồi cộng thêm 10%'},
+    {n:'Cồn lau', q:'200 ml', p:20000, mua:'cho'},
+    {n:'Keo dán viền (nếu bậc gồ ghề)', q:'1 tuýp', p:35000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Đo và cắt sẵn từng dải', d:'Cắt ngắn hơn chiều rộng bậc mỗi bên 2 cm cho gọn mắt. Cắt hết một lượt rồi mới dán.'},
+    {t:'Lau sạch và chờ khô', d:'Lau cồn kỹ mép bậc, chờ khô hẳn 10 phút. Bậc còn ẩm hay còn sáp lau nhà là băng bong trong tuần.'},
+    {t:'Dán cách mép bậc 2 cm', d:'Dán sát mép quá thì mũi chân đạp lên phần rìa, băng cuốn lên. Cách 2 cm là vừa.'},
+    {t:'Miết thật kỹ', d:'Lăn hoặc miết bằng giẻ khô 30 giây mỗi dải, đặc biệt là hai đầu.'},
+    {t:'Chờ 24 giờ mới đi nhiều', d:'Keo cần một ngày để ăn hết. Đêm đầu tiên hạn chế đi lại.'}
+  ],
+  loi:['Dán khi sàn còn ẩm sau lau nhà: bong hết sau 3–4 ngày.','Dán trùm ra mép bậc: mũi giày móc vào, còn trơn hơn lúc chưa dán.'],
+  bien:['Bậc gỗ đẹp tiếc không muốn dán băng nhám: dùng nẹp nhôm có rãnh cao su, bắt vít, tháo được.']
+},
+{
+  id:'thaydau', name:'Thay nhớt xe máy tại nhà', cat:'Xe cộ', diff:2, hours:1,
+  blurb:'Việc 25 phút, tiết kiệm tiền công và quan trọng hơn là biết chắc mình đổ đúng loại nhớt, đúng lượng.',
+  flags:{onao:1,bui:2,chungcu:false},
+  tools:['Khẩu 17 hoặc tuýp đúng cỡ ốc xả','Khay hứng','Phễu','Găng tay','Giẻ lau'],
+  skills:['oc','do'],
+  mats:[
+    {n:'Nhớt xe máy', q:'1 lít (xe số) hoặc theo sách xe', p:110000, mua:'xe', note:'xem đúng cấp nhớt ghi trong sách xe, ví dụ 10W-40 JASO MA2'},
+    {n:'Gioăng ốc xả', q:'1 cái', p:5000, mua:'xe', note:'nhiều người bỏ qua — đây là chỗ rỉ nhớt phổ biến nhất'},
+    {n:'Khay hứng và can đựng nhớt thải', q:'1 bộ', p:60000, mua:'kimkhi'}
+  ],
+  steps:[
+    {t:'Nổ máy 2 phút cho nhớt loãng', d:'Nhớt ấm chảy hết cặn ra theo. Nhưng đừng để máy nóng già, bỏng tay.'},
+    {t:'Dựng chân chống giữa', d:'Xe phải đứng thẳng thì nhớt cũ mới ra hết và đo mức nhớt mới mới đúng.'},
+    {t:'Mở ốc xả, chờ chảy hết', d:'Đặt khay bên dưới, mở ốc xả ở đáy máy. Chờ 5 phút, tới khi chỉ còn nhỏ giọt.'},
+    {t:'Thay gioăng, siết ốc xả', d:'Lắp gioăng mới, siết vừa tay chắc. Siết quá tay là toét ren lốc máy — sửa rất đắt.'},
+    {t:'Đổ nhớt mới qua phễu', d:'Đúng lượng ghi trong sách xe (thường 0,8–1 lít). Đổ nhiều hơn không tốt hơn, còn hại máy.'},
+    {t:'Nổ máy, kiểm tra rỉ', d:'Nổ 1 phút, tắt máy, chờ 2 phút rồi xem que thăm và nhìn quanh ốc xả xem có rỉ không.'}
+  ],
+  warns:[{t:'Nhớt thải không đổ xuống cống', d:'Một lít nhớt thải làm ô nhiễm rất nhiều nước. Đựng vào can, mang ra tiệm sửa xe — họ thu lại miễn phí.'},
+         {t:'Siết ốc xả quá tay là hỏng lốc máy', d:'Ren nhôm của lốc máy rất mềm. Siết chắc tay là đủ, đừng lấy ống nối dài.'}],
+  loi:['Mở nhầm ốc xả nhớt lốc côn (xe tay ga) thay vì ốc xả nhớt máy.','Đổ nhớt ô tô vào xe số có côn ướt: côn trượt, xe ì.'],
+  bien:['Xe tay ga: nhớt láp thay mỗi 3 lần thay nhớt máy, dung tích chỉ khoảng 100 ml.']
+}
+];
+/* == /DATA:PROJECTS == */
+
+/* == DATA:KYNANG ==  Chín kỹ năng nền. Dự án khai skills[] trỏ vào đây. */
+const KYNANG = [
+{
+  id:'do', ten:'Đo và vạch dấu', icon:'📏',
+  tomtat:'Kỹ năng rẻ nhất và cứu được nhiều tiền nhất. Gần như mọi món hỏng trong nhà đều hỏng từ bước đo.',
+  buoc:[
+    'Đo hai lần, cắt một lần. Lần thứ hai đo từ đầu kia lại — sai số sẽ tự lộ ra.',
+    'Luôn đo từ cùng một mốc. Đổi mốc giữa chừng là cộng dồn sai số.',
+    'Vạch dấu bằng một nét mảnh, cắt sát mép ngoài nét, đừng cắt vào giữa nét.',
+    'Vật cong hoặc dài: căng dây rồi đo dây, đừng bẻ thước theo vật.',
+    'Ghi số ra giấy ngay khi đo. Nhớ trong đầu ba số là quên một.'
+  ],
+  loi:['Đo bằng thước cuộn mà không ấn lưỡi móc — hụt hoặc dư đúng 2 mm mỗi lần.',
+       'Quên trừ bề dày lưỡi cắt: mỗi nhát cưa ăn mất 2–3 mm gỗ.',
+       'Dùng số đo của người khác cho đồ của mình (đầu, cửa, bàn đều khác nhau).'],
+  dungcu:['Thước dây mềm','Thước cuộn kim loại','Thước vuông (ê-ke)','Bút chì cứng hoặc bút vạch dấu']
+},
+{
+  id:'cat', ten:'Cắt bằng dao rọc giấy', icon:'🔪',
+  tomtat:'Cắt vải, xốp, nhựa mỏng, bìa. Lưỡi cùn nguy hiểm hơn lưỡi sắc — vì phải ấn mạnh nên trượt là đâm.',
+  buoc:[
+    'Bẻ đốt lưỡi cho sắc trước mỗi việc lớn. Lưỡi rẻ hơn ngón tay rất nhiều.',
+    'Kéo dao nhiều lượt nhẹ, đừng cố ăn hết bề dày trong một nhát.',
+    'Luôn cắt dọc theo thước sắt, không dùng thước nhựa (dao ăn vào thước là trượt).',
+    'Bàn tay giữ thước đặt xa đường cắt, các ngón nắm lại chứ không xoè ra.',
+    'Kê tấm lót phía dưới, và cắt theo hướng ra xa người.'
+  ],
+  loi:['Cắt vát lưỡi dao: mép nghiêng, hai mảnh ghép vào nhau hở.',
+       'Dùng lưỡi cùn cho xốp — xốp bị xé chứ không đứt, mép nham nhở.'],
+  an:['Rút lưỡi vào ngay khi buông dao xuống bàn.'],
+  dungcu:['Dao rọc giấy lưỡi 18 mm','Thước sắt','Tấm lót cắt']
+},
+{
+  id:'cua', ten:'Cưa tay', icon:'🪚',
+  tomtat:'Cưa gỗ, ống nhựa, thanh nhôm. Vấn đề của người mới không phải sức, mà là giữ cho đường cưa thẳng.',
+  buoc:[
+    'Vạch đường cưa quanh cả bốn mặt của thanh, không chỉ mặt trên.',
+    'Bắt đầu bằng vài nhát kéo ngược nhẹ để tạo rãnh, rồi mới đẩy.',
+    'Cưa bằng cả chiều dài lưỡi, nhịp chậm và đều — nhanh là lệch.',
+    'Kẹp chặt vật vào bàn. Vật rung là đường cưa lượn sóng.',
+    'Gần đứt thì đỡ phần rơi, nếu không mảnh cuối sẽ bị toác.'
+  ],
+  loi:['Ấn mạnh xuống lưỡi cưa: lưỡi kẹt, cong, và đường cưa chạy lệch.',
+       'Cưa ống nhựa bằng lưỡi cưa gỗ răng to — nhựa vỡ mép thay vì đứt gọn.'],
+  dungcu:['Cưa tay răng nhỏ','Cưa sắt (cho nhựa, kim loại)','Kẹp chữ C hoặc ê-tô']
+},
+{
+  id:'khoan', ten:'Khoan tường', icon:'🔩',
+  tomtat:'Việc dễ gây hỏng nhất trong nhà: khoan trúng dây điện hoặc ống nước. Ba phút kiểm tra đổi lấy cả buổi đục tường.',
+  buoc:[
+    'Dò trước: máy dò kim loại/điện, hoặc tránh vùng thẳng đứng phía trên và dưới ổ cắm, công tắc.',
+    'Chọn mũi đúng vật liệu: mũi bê tông cho tường gạch, mũi gỗ cho gỗ, mũi sắt cho kim loại.',
+    'Dán băng dính lên mũi làm cữ độ sâu — khoan sâu quá là thủng sang phòng bên.',
+    'Khoan chế độ búa cho tường gạch, tắt búa khi khoan gạch men (nếu không sẽ nứt men).',
+    'Nở phải chìm hẳn trong tường, không thò ra. Nở thò là vít không siết được.'
+  ],
+  loi:['Dùng nở nhựa 6 mm cho tải nặng: tuột dần theo thời gian.',
+       'Khoan tường thạch cao rồi đóng nở thường — cả mảng rơi khi treo đồ.',
+       'Không hút bụi lỗ khoan: bụi kẹt làm nở không vào hết.'],
+  an:['Đeo kính. Mảnh gạch bắn ra rất nhanh và luôn hướng lên mặt.'],
+  dungcu:['Khoan búa','Bộ mũi khoan','Nở nhựa và nở bướm','Máy dò trong tường']
+},
+{
+  id:'khau', ten:'Khâu tay mũi đột', icon:'🧵',
+  tomtat:'Một đường khâu tay đúng cách chắc hơn máy khâu gia đình. Chỉ cần một mũi duy nhất: mũi đột.',
+  buoc:[
+    'Mũi đột: đâm kim lên, lùi lại nửa mũi đâm xuống, rồi tiến lên một mũi rưỡi. Mặt trên thành một đường liền như máy khâu.',
+    'Mũi đều 3 mm. Vạch phấn một đường mờ để khâu theo.',
+    'Chỗ chịu lực (quai túi, chân dây) khâu ô chữ nhật rồi gạch chéo hai đường.',
+    'Kết thúc bằng 3 mũi đè lên nhau ở mặt trái, đừng thắt nút to.',
+    'Chỉ dài quá một sải tay là rối. Ngắn thôi, nối nhiều lần.'
+  ],
+  loi:['Kéo chỉ quá căng: vải nhăn nhúm dọc đường khâu.',
+       'Khâu vải dày bằng kim nhỏ — kim cong rồi gãy.'],
+  dungcu:['Kim khâu tay số 5','Kim khâu bao đầu tam giác','Chỉ dù / chỉ bền màu','Phấn vẽ vải','Đê']
+},
+{
+  id:'dan', ten:'Dán — chọn đúng keo', icon:'🧴',
+  tomtat:'Mối dán bung gần như luôn vì chọn sai keo hoặc mặt dán chưa sạch, chứ không phải vì ít keo.',
+  buoc:[
+    'Gỗ với gỗ: keo sữa (PVA). Cần chịu nước thì keo gỗ D3 hoặc polyurethane.',
+    'Nhựa với kim loại, chỗ chịu lực: epoxy hai thành phần.',
+    'Xốp EPS: keo gốc nước hoặc silicon trung tính. Keo 502 và keo gốc dung môi ăn thủng xốp.',
+    'Chỗ cần đàn hồi, kín nước: silicon trung tính.',
+    'Mặt dán phải nhám, sạch, khô. Chà nhám mặt bóng trước khi dán.',
+    'Ép chặt trong thời gian khô ghi trên vỏ, đừng chỉ đặt lên.'
+  ],
+  loi:['Bôi keo mới đè lên keo cũ — mối dán bung lại sau vài ngày.',
+       'Bôi thật nhiều keo cho chắc: keo dày là mối yếu, lớp keo mỏng đều mới khoẻ.'],
+  an:['Keo 502 dính tay: ngâm nước ấm pha xà phòng rồi từ từ tách, đừng giật.'],
+  dungcu:['Keo sữa gỗ','Epoxy 2 thành phần','Silicon trung tính','Súng bắn keo nến','Kẹp chữ C']
+},
+{
+  id:'son', ten:'Sơn xịt và lau dầu', icon:'🎨',
+  tomtat:'Lớp phủ đẹp là kết quả của khâu chuẩn bị, không phải của loại sơn đắt. 80% công là chà nhám và lau bụi.',
+  buoc:[
+    'Chà nhám từ thô đến mịn (#120 → #240), luôn xuôi thớ gỗ.',
+    'Lau sạch bụi bằng khăn ẩm, chờ khô hẳn mới sơn.',
+    'Sơn xịt: lắc 1 phút, xịt cách 25 cm, đưa đều tay, nhiều lớp thật mỏng.',
+    'Lớp sau cách lớp trước 15–20 phút. Mỗi lớp mỏng khô nhanh và không chảy.',
+    'Lau dầu gỗ: đổ trực tiếp, xoa đều, chờ ngấm 30 phút rồi lau sạch phần thừa.',
+    'Đồ tiếp xúc thức ăn chỉ dùng dầu food-grade, không dùng dầu ăn thường.'
+  ],
+  loi:['Xịt một lớp dày cho nhanh — chảy thành vệt, phải nhám lại từ đầu.',
+       'Sơn trong phòng kín: hại phổi, và bụi trong nhà bám hết vào lớp sơn ướt.'],
+  an:['Xịt ngoài trời hoặc chỗ thoáng, đeo khẩu trang than hoạt tính.'],
+  dungcu:['Giấy nhám #120 #240','Sơn xịt','Dầu lau gỗ','Khẩu trang','Găng tay']
+},
+{
+  id:'oc', ten:'Vặn ốc, siết đúng lực', icon:'🔧',
+  tomtat:'Siết quá tay hỏng nhiều đồ hơn siết lỏng. Ren nhôm và nhựa rất mềm, toét ren là hỏng cả cụm.',
+  buoc:[
+    'Dùng đúng cỡ khẩu/tua vít. Cỡ lệch là tròn đầu ốc, sau đó không tháo được nữa.',
+    'Vặn tay vài vòng đầu để ăn đúng ren, rồi mới dùng dụng cụ.',
+    'Siết chắc tay là đủ với ốc nhỏ. Đừng nối ống dài để lấy thêm lực.',
+    'Nhiều ốc trên một mặt: siết chéo nhau và siết làm hai lượt.',
+    'Ốc hay tự lỏng vì rung: chấm keo khoá ren loại tháo được.'
+  ],
+  loi:['Siết ốc xả nhớt quá tay: toét ren lốc máy, sửa rất đắt.',
+       'Dùng kìm thay khẩu — tròn cạnh ốc.'],
+  dungcu:['Bộ khẩu và tay vặn','Tua vít 4 cạnh và dẹt','Lục giác','Mỏ lết']
+},
+{
+  id:'dien', ten:'An toàn điện', icon:'⚡',
+  tomtat:'Ranh giới rõ ràng: đồ chạy pin và 5–12 V thì tự làm thoải mái. Dính tới 220 V thì gọi thợ.',
+  buoc:[
+    'Trước khi đụng vào bất cứ thứ gì có dây cắm tường: rút phích, ngắt aptomat của mạch đó.',
+    'Thử lại bằng bút thử điện, đừng tin vào việc đã gạt cầu dao.',
+    'Nước và điện không đứng cạnh nhau. Thiết bị tự chế có nước phải chạy pin hoặc adapter hạ áp.',
+    'Dùng đúng tiết diện dây và đúng adapter theo công suất. Dây nóng khi chạy là dây sai.',
+    'Đấu nối phải bọc kín bằng ống co nhiệt hoặc cút nối, không quấn tạm băng dính.'
+  ],
+  loi:['Đấu trực tiếp 220 V vào đồ tự chế bằng thùng xốp, thùng nhựa.',
+       'Nối dây bằng cách xoắn rồi quấn băng dính điện — nóng, chảy, chập.'],
+  an:['Việc phải chạm vào dây 220 V trong tường, tủ điện, cầu dao: gọi thợ điện. Không có ngoại lệ.'],
+  dungcu:['Bút thử điện','Kìm tuốt dây','Ống co nhiệt','Đồng hồ đo điện']
+}
+];
+const kyById = id => KYNANG.find(k=>k.id===id);
+
+/* == DATA:DUNGCU ==  Bộ dụng cụ chuẩn. Dự án suy ra dụng cụ cần từ skills[]. */
+const DUNGCU = [
+  {id:'thuoc',  ten:'Thước dây + thước cuộn', p:25000,  nen:1, ky:['do']},
+  {id:'dao',    ten:'Dao rọc giấy + thước sắt', p:35000, nen:1, ky:['cat']},
+  {id:'keo',    ten:'Kéo cắt vải', p:45000, ky:['khau']},
+  {id:'kim',    ten:'Kim chỉ khâu tay', p:25000, nen:1, ky:['khau']},
+  {id:'nham',   ten:'Giấy nhám các cỡ', p:15000, nen:1, ky:['son']},
+  {id:'tuavit', ten:'Bộ tua vít', p:80000, nen:1, ky:['oc','khoan']},
+  {id:'kep',    ten:'Kẹp chữ C', p:60000, ky:['dan']},
+  {id:'keonen', ten:'Súng bắn keo nến', p:80000, ky:['dan']},
+  {id:'cua',    ten:'Cưa tay răng nhỏ', p:90000, ky:['cua']},
+  {id:'cuasat', ten:'Cưa sắt', p:70000, ky:['cua']},
+  {id:'mole',   ten:'Mỏ lết', p:70000, ky:['oc']},
+  {id:'khau',   ten:'Bộ khẩu và lục giác', p:150000, ky:['oc']},
+  {id:'nivo',   ten:'Ni-vô', p:50000, ky:['khoan']},
+  {id:'khoan',  ten:'Máy khoan búa', p:600000, ky:['khoan']},
+  {id:'butthu', ten:'Bút thử điện', p:25000, nen:1, ky:['dien']},
+  {id:'bula',   ten:'Bàn là', p:250000, ky:['khau']}
+];
+const dcById = id => DUNGCU.find(d=>d.id===id);
+/* dụng cụ một dự án cần = hợp của dụng cụ mọi kỹ năng nó dùng */
+const dcOf = p => DUNGCU.filter(d => (d.ky||[]).some(k => (p.skills||[]).includes(k))).map(d=>d.id);
+/* == /DATA:DUNGCU == */
+/* == /DATA:KYNANG == */
+const byId = id => PROJECTS.find(p=>p.id===id);
+const projCost = p => p.mats.reduce((s,m)=>s+m.p,0);
+
+/* ---------------------------------------------------------------- icon */
+const Ico = ({d}) => <svg viewBox="0 0 24 24" aria-hidden="true" dangerouslySetInnerHTML={{__html:d}}/>;
+/* ô tick dùng được bằng bàn phím và đọc được bằng trình đọc màn hình */
+const Tick = ({on,onClick,label}) => (
+  <div className={'tick'+(on?' on':'')} onClick={onClick} role="checkbox" tabIndex={0}
+       aria-checked={!!on} aria-label={label||'đánh dấu'}
+       onKeyDown={e=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); onClick(); } }}>
+    {on && <Ico d={ICONS.check}/>}
+  </div>
+);
+const ICONS = {
+  lib:'<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>',
+  doing:'<path d="M14.7 6.3a4 4 0 0 0 5 5L15 16l-3 3-3-3 3-3z"/><path d="m6 18 2 2"/>',
+  shop:'<path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 3H3"/>',
+  gal:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m3 17 5-4 4 3 3-2 6 5"/>',
+  me:'<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+  check:'<path d="m4 12 5 5L20 6"/>'
+};
+
+/* ---------------------------------------------------------------- App */
+function App(){
+  const [tab,setTab]      = useState('lib');
+  const [open,setOpen]    = useState(()=>{ const m=/#p=([\w-]+)/.exec(location.hash); return m && byId(m[1]) ? m[1] : null; });
+  const [openKy,setOpenKy]= useState(()=>{ const m=/#k=([\w-]+)/.exec(location.hash); return m && kyById(m[1]) ? m[1] : null; });
+  const [doing,setDoingS] = useState(()=>store.get(K.doing,{}));
+  const [shop,setShopS]   = useState(()=>store.get(K.shop,{}));
+  const [gal,setGalS]     = useState(()=>store.get(K.gal,[]));
+  const [body,setBodyS]   = useState(()=>store.get(K.body,{chuVi:570,cung:330}));
+  const [light,setLight]  = useState(()=>{
+    const t = store.get(K.theme,null);
+    if(t) return t==='light';
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+  });
+  const [kho,setKhoS]     = useState(()=>store.get(K.kho,[]));
+  const setKho = v => { setKhoS(v); store.set(K.kho,v); };
+
+  const setDoing = v => { setDoingS(v); store.set(K.doing,v); };
+  const setShop  = v => { setShopS(v);  store.set(K.shop,v); };
+  const setGal   = v => { setGalS(v);   store.set(K.gal,v); };
+  const setBody  = v => { setBodyS(v);  store.set(K.body,v); };
+  useEffect(()=>{ document.body.classList.toggle('light',light); store.set(K.theme, light?'light':'dark'); },[light]);
+
+  const dims = useMemo(()=>({
+    chuVi: body.chuVi, cung: body.cung,
+    nanL: Math.round(body.cung/2 + 10),
+    daiL: Math.round(body.chuVi + 30),
+    spacing: Math.round(body.chuVi/6)
+  }),[body]);
+
+  const start = id => { if(doing[id]) return; setDoing({...doing,[id]:{started:today(),steps:{},done:false}}); };
+  const [lamNgay,setLamNgay] = useState(false);
+  const openLam = id => { start(id); setOpen(id); setLamNgay(true); };
+  const shared = {doing,setDoing,shop,setShop,gal,setGal,body,setBody,dims,kho,setKho,
+                  open:setOpen,openKy:setOpenKy,openLam,start};
+
+  const TABS = [['lib','Dự án',ICONS.lib],['doing','Đang làm',ICONS.doing],
+                ['shop','Đi chợ',ICONS.shop],['gal','Thành phẩm',ICONS.gal],['me','Tôi',ICONS.me]];
+  return (
+    <div>
+      {tab==='lib'   && <Library {...shared}/>}
+      {tab==='doing' && <Doing {...shared}/>}
+      {tab==='shop'  && <Shop {...shared}/>}
+      {tab==='gal'   && <Gallery {...shared}/>}
+      {tab==='me'    && <Me {...shared} light={light} setLight={setLight}/>}
+      {open && <ProjectView id={open} close={()=>{setOpen(null); setLamNgay(false);}}
+                            lamNgay={lamNgay} clearLam={()=>setLamNgay(false)} {...shared}/>}
+      {openKy && <SkillView id={openKy} close={()=>setOpenKy(null)} open={setOpen}/>}
+      <nav>{TABS.map(([k,label,d])=>(
+        <button key={k} className={tab===k?'on':''} onClick={()=>setTab(k)}>
+          <Ico d={d}/>{label}
+        </button>))}
+      </nav>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- thu vien */
+const CAT_ICON = {
+  'Đồ đội đầu':'<path d="M14 44a26 26 0 0 1 52 0"/><path d="M8 44a32 32 0 0 1 64 0"/><path d="M40 18v-6M26 22l-3-5M54 22l3-5"/>',
+  'Nội thất'  :'<path d="M12 26h56M12 44h56"/><path d="M20 26v-6M60 26v-6M20 44v-6M60 44v-6"/>',
+  'Đồ dùng'   :'<rect x="18" y="20" width="44" height="30" rx="5"/><path d="M18 30h44M32 20v10"/>',
+  'May vá'    :'<path d="M18 50 62 18"/><circle cx="60" cy="20" r="4"/><path d="M22 46c8 4 14-2 10-8s2-12 10-8"/>',
+  'Sửa chữa'  :'<path d="M50 16a10 10 0 0 0-13 13L18 48l5 5 19-19a10 10 0 0 0 13-13l-7 7-6-6z"/>',
+  'Điện & mát':'<circle cx="40" cy="34" r="6"/><path d="M40 28c0-9 14-12 14-4s-8 8-14 4"/><path d="M40 40c0 9-14 12-14 4s8-8 14-4"/>',
+  'Cây cối'   :'<path d="M40 52V26"/><path d="M40 34c-12 0-16-8-16-14 10 0 16 6 16 14z"/><path d="M40 40c12 0 16-8 16-14-10 0-16 6-16 14z"/>'
+};
+function Thumb({p}){
+  return <div className="thumb" dangerouslySetInnerHTML={{__html:
+    '<svg viewBox="0 0 80 68"><g fill="none" stroke="var(--acc)" stroke-width="2.3" stroke-linecap="round" '+
+    'stroke-linejoin="round" opacity=".9">'+(CAT_ICON[p.cat]||CAT_ICON['Đồ dùng'])+'</g></svg>'}}/>;
+}
+
+const thieuDC = (p,kho) => dcOf(p).filter(id=>!(kho||[]).includes(id));
+
+function PCard({p,onClick,prog,kho,viSao}){
+  const thieu = kho ? thieuDC(p,kho) : [];
+  return (
+    <div className="card pcard" onClick={onClick}>
+      <Thumb p={p}/>
+      <div style={{flex:1,minWidth:0}}>
+        <h3>{p.name}</h3>
+        <p className="muted" style={{marginTop:3,display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical',overflow:'hidden'}}>{p.blurb}</p>
+        <div className="meta">
+          <span className="chip">{p.cat}</span>
+          <span className="chip">{DIFF[p.diff]}</span>
+          <span className="chip">{gio(p.hours)}</span>
+          <span className="chip acc">{vnd(projCost(p))}</span>
+          {p.flags && p.flags.onao>=3 && <span className="chip warn">ồn</span>}
+          {p.flags && p.flags.chungcu===false && <span className="chip warn">cần khoan tường</span>}
+          {kho && kho.length>0 && (thieu.length
+            ? <span className="chip warn">thiếu {thieu.length} dụng cụ</span>
+            : <span className="chip ok">đủ dụng cụ</span>)}
+        </div>
+        {viSao && <p className="tiny" style={{marginTop:6,color:'var(--acc)'}}>khớp {viSao}</p>}
+        {prog!=null && prog>0 && <div className="bar"><i style={{width:prog+'%'}}/></div>}
+      </div>
+    </div>
+  );
+}
+
+function Library({open,openKy,doing,kho}){
+  const [mode,setMode] = useState('du');
+  const [cat,setCat] = useState('all');
+  const [q,setQ] = useState('');
+  const [sort,setSort] = useState('mac');
+  const [flt,setFlt] = useState([]);
+  const tog = f => setFlt(flt.includes(f) ? flt.filter(x=>x!==f) : flt.concat(f));
+  const hop = p =>
+    (!flt.includes('nhanh') || p.hours<=1) &&
+    (!flt.includes('re')    || projCost(p)<=100000) &&
+    (!flt.includes('de')    || p.diff===1) &&
+    (!flt.includes('cc')    || !p.flags || p.flags.chungcu!==false) &&
+    (!flt.includes('dc')    || !thieuDC(p,kho).length);
+  const SORTS = {mac:()=>0, de:(a,b)=>a.diff-b.diff||a.hours-b.hours,
+                 re:(a,b)=>projCost(a)-projCost(b), nhanh:(a,b)=>a.hours-b.hours};
+  const list = PROJECTS.filter(p =>
+    (cat==='all'||p.cat===cat) && hop(p) &&
+    (!q || (p.name+' '+p.blurb+' '+p.cat+' '+p.mats.map(m=>m.n).join(' ')+' '+p.tools.join(' ')).toLowerCase().includes(q.toLowerCase())))
+    .slice().sort(SORTS[sort]);
+  const kyList = KYNANG.filter(k =>
+    !q || (k.ten+' '+k.tomtat+' '+k.dungcu.join(' ')).toLowerCase().includes(q.toLowerCase()));
+
+  /* chỉ mục vật liệu: gom theo tên, đếm số dự án dùng tới */
+  const vlIndex = useMemo(()=>{
+    const m = {};
+    PROJECTS.forEach(p=> p.mats.forEach(x=>{
+      const k = x.n.trim();
+      if(!m[k]) m[k] = {n:k, mua:x.mua||'cho', p:x.p, du:[]};
+      if(!m[k].du.includes(p.id)) m[k].du.push(p.id);
+    }));
+    return Object.values(m).sort((a,b)=> b.du.length-a.du.length || a.n.localeCompare(b.n,'vi'));
+  },[]);
+  const vlList = vlIndex.filter(v => !q || v.n.toLowerCase().includes(q.toLowerCase()));
+  const vlNhom = {};
+  vlList.forEach(v=> (vlNhom[v.mua]=vlNhom[v.mua]||[]).push(v));
+
+  /* vì sao dự án này khớp với từ đang tìm */
+  const viSao = p => {
+    if(!q) return null;
+    const s = q.toLowerCase();
+    if(p.name.toLowerCase().includes(s)) return null;
+    const m = p.mats.find(x=>x.n.toLowerCase().includes(s));
+    if(m) return 'vật liệu: '+m.n;
+    const t = p.tools.find(x=>x.toLowerCase().includes(s));
+    if(t) return 'dụng cụ: '+t;
+    if(p.cat.toLowerCase().includes(s)) return 'nhóm '+p.cat;
+    return null;
+  };
+  const prog = p => { const d=doing[p.id]; if(!d) return null;
+    return Math.round(Object.values(d.steps||{}).filter(s=>s.done).length / p.steps.length * 100); };
+  return (
+    <div>
+      <div className="hd">
+        <h1>Xưởng Nhà</h1>
+        <p>{mode==='du' ? PROJECTS.length+' dự án tự làm · vật liệu mua được ở Việt Nam'
+          : mode==='ky' ? KYNANG.length+' kỹ năng nền — đọc trước khi bắt tay vào làm'
+                        : 'Còn thừa thứ gì trong nhà? Tìm xem làm được món nào'}</p>
+        <div className="seg2">
+          <button className={mode==='du'?'on':''} onClick={()=>setMode('du')}>Dự án</button>
+          <button className={mode==='ky'?'on':''} onClick={()=>setMode('ky')}>Kỹ năng</button>
+          <button className={mode==='vl'?'on':''} onClick={()=>setMode('vl')}>Vật liệu</button>
+        </div>
+        {mode==='du' && <div className="seg">
+          <button className={cat==='all'?'on':''} onClick={()=>setCat('all')}>Tất cả</button>
+          {CATS.map(c=><button key={c} className={cat===c?'on':''} onClick={()=>setCat(c)}>{c}</button>)}
+        </div>}
+      </div>
+      <div className="wrap">
+        <div style={{marginTop:12}}>
+          <input value={q} onChange={e=>setQ(e.target.value)}
+            placeholder={mode==='du'?'Tìm dự án, vật liệu, dụng cụ…':mode==='ky'?'Tìm kỹ năng…':'Tìm vật liệu…'}/>
+        </div>
+        {mode==='du' && <>
+          <div className="fltrow">
+            {[['nhanh','dưới 1 giờ'],['re','dưới 100k'],['de','dễ'],['cc','làm được ở chung cư']]
+              .concat(kho && kho.length ? [['dc','đủ dụng cụ tôi có']] : []).map(([k,l])=>
+              <button key={k} className={'fchip'+(flt.includes(k)?' on':'')} onClick={()=>tog(k)}>{l}</button>)}
+            <select className="fsel" value={sort} onChange={e=>setSort(e.target.value)}>
+              <option value="mac">Thứ tự mặc định</option>
+              <option value="de">Dễ trước</option>
+              <option value="re">Rẻ trước</option>
+              <option value="nhanh">Nhanh trước</option>
+            </select>
+          </div>
+          <p className="tiny" style={{margin:'10px 2px 0'}}>{list.length} dự án</p>
+          {list.map(p=><PCard key={p.id} p={p} prog={prog(p)} kho={kho} viSao={viSao(p)} onClick={()=>open(p.id)}/>)}
+          {!list.length && <div className="empty">Không có dự án nào khớp.<br/>Bỏ bớt một bộ lọc thử xem.</div>}
+        </>}
+        {mode==='ky' && <>
+          {kyList.map(k=>(
+            <div className="card pcard" key={k.id} onClick={()=>openKy(k.id)}>
+              <div className="thumb" style={{fontSize:30,flex:'0 0 60px',height:60}}>{k.icon}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <h3>{k.ten}</h3>
+                <p className="muted" style={{marginTop:3}}>{k.tomtat}</p>
+                <div className="meta">
+                  <span className="chip">{k.buoc.length} điều cốt lõi</span>
+                  <span className="chip">{PROJECTS.filter(p=>(p.skills||[]).includes(k.id)).length} dự án dùng</span>
+                </div>
+              </div>
+            </div>))}
+          {!kyList.length && <div className="empty">Không có kỹ năng nào khớp.</div>}
+        </>}
+        {mode==='vl' && <>
+          <p className="tiny" style={{margin:'10px 2px 0'}}>{vlList.length} loại vật liệu · chạm để xem dự án dùng tới</p>
+          {Object.keys(vlNhom).map(g=>(
+            <div className="card" key={g}>
+              <b style={{fontSize:14.5}}>{MUA[g]||g}</b>
+              {vlNhom[g].map(v=>(
+                <div className="mat" key={v.n} style={{cursor:'pointer'}}
+                     onClick={()=>{ setQ(v.n); setMode('du'); }}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="between">
+                      <b style={{fontSize:13.5}}>{v.n}</b>
+                      <span className="tiny" style={{whiteSpace:'nowrap'}}>{v.p?vnd(v.p):'có sẵn'}</span>
+                    </div>
+                    <p className="tiny" style={{marginTop:2}}>
+                      {v.du.length>1 ? v.du.length+' dự án dùng tới' : byId(v.du[0]).name}</p>
+                  </div>
+                  <span style={{color:'var(--acc)',fontSize:17,alignSelf:'center'}}>›</span>
+                </div>))}
+            </div>))}
+          {!vlList.length && <div className="empty">Không có vật liệu nào khớp.</div>}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- che do lam */
+function FocusMode({id,close,doing,setDoing,dims}){
+  const p = byId(id);
+  const d = doing[id] || {steps:{}};
+  const first = (()=>{ for(let i=0;i<p.steps.length;i++) if(!(d.steps&&d.steps[i]&&d.steps[i].done)) return i;
+                       return p.steps.length-1; })();
+  const [i,setI] = useState(first);
+  const [t0] = useState(()=>Date.now());
+  const [now,setNow] = useState(()=>Date.now());
+  useEffect(()=>{ const h=setInterval(()=>setNow(Date.now()),1000); return ()=>clearInterval(h); },[]);
+  const phut = Math.floor((now-t0)/60000), giay = Math.floor((now-t0)/1000)%60;
+  const st = (d.steps&&d.steps[i]) || {done:false,note:''};
+  const setStep = patch => { const steps={...(d.steps||{})}; steps[i]={...st,...patch};
+    setDoing({...doing,[id]:{...d,steps}}); };
+  const done = Object.values(d.steps||{}).filter(s=>s.done).length;
+  const xong = done===p.steps.length;
+  const s = p.steps[i];
+  return (
+    <div className="focus">
+      <div className="fhd">
+        <button className="back" onClick={close}>‹ Thoát chế độ làm</button>
+        <div className="between" style={{marginTop:2}}>
+          <b style={{fontSize:14}}>{p.name}</b>
+          <span className="tiny" style={{whiteSpace:'nowrap'}}>⏱ {phut}:{String(giay).padStart(2,'0')}</span>
+        </div>
+        <div className="bar" style={{marginTop:8}}><i style={{width:(done/p.steps.length*100)+'%'}}/></div>
+        <div className="dots">{p.steps.map((_,k)=>
+          <span key={k} className={'dt'+(k===i?' cur':'')+((d.steps&&d.steps[k]&&d.steps[k].done)?' ok':'')}
+                onClick={()=>setI(k)}/>)}</div>
+      </div>
+      <div className="fbody">
+        <div className="sn">BƯỚC {String(i+1).padStart(2,'0')} / {p.steps.length}</div>
+        <h2 className="ftitle">{s.t}</h2>
+        <p className="fdesc">{s.d}</p>
+        {s.fig && FIG[s.fig] && <div className="fig" dangerouslySetInnerHTML={{__html:figHTML(s.fig,dims)}}/>}
+        <textarea style={{marginTop:14}} placeholder="Ghi lại chỗ vướng, số đo thật, thứ phải mua thêm…"
+          value={st.note} onChange={e=>setStep({note:e.target.value})}/>
+        {xong && <div className="card" style={{marginTop:14,borderColor:'var(--acc)'}}>
+          <h3 style={{color:'var(--acc)'}}>Xong cả {p.steps.length} bước</h3>
+          <p className="muted" style={{marginTop:4}}>Chụp lại thành phẩm ở tab Thành phẩm trong khi còn nhớ chỗ nào khó.</p>
+        </div>}
+      </div>
+      <div className="fnav">
+        <button className="btn ghost" disabled={i===0} onClick={()=>setI(i-1)} style={{flex:'0 0 88px'}}>‹ Trước</button>
+        {st.done
+          ? <button className="btn ghost" onClick={()=>{ setStep({done:false}); }}>Bỏ đánh dấu</button>
+          : <button className="btn" onClick={()=>{ setStep({done:true}); if(i<p.steps.length-1) setTimeout(()=>setI(i+1),160); }}>Xong bước này ✓</button>}
+        <button className="btn ghost" disabled={i===p.steps.length-1} onClick={()=>setI(i+1)} style={{flex:'0 0 78px'}}>Sau ›</button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- doc ky nang */
+function SkillView({id,close,open}){
+  const k = kyById(id);
+  if(!k) return null;
+  const dung = PROJECTS.filter(p=>(p.skills||[]).includes(k.id));
+  return (
+    <div className="sheet" style={{zIndex:60}}>
+      <div className="shd">
+        <button className="back" onClick={close}>‹ Đóng</button>
+        <h1 style={{fontSize:19,fontWeight:600}}>{k.icon} {k.ten}</h1>
+      </div>
+      <div className="wrap">
+        <div className="card"><p className="muted" style={{fontSize:14,lineHeight:1.6}}>{k.tomtat}</p></div>
+        <div className="card">
+          <h3>Làm đúng thì làm thế này</h3>
+          {k.buoc.map((b,i)=>(
+            <div className="row" key={i} style={{marginTop:10,alignItems:'flex-start'}}>
+              <span className="numdot">{i+1}</span>
+              <p className="muted" style={{flex:1}}>{b}</p>
+            </div>))}
+        </div>
+        <div className="card">
+          <h3>Lỗi hay gặp</h3>
+          {k.loi.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>✕ {t}</p>)}
+        </div>
+        {k.an && k.an.map((t,i)=><div key={i} className="warnbox"><h4>An toàn</h4><p>{t}</p></div>)}
+        <div className="card">
+          <h3>Dụng cụ</h3>
+          <div className="meta" style={{marginTop:8}}>{k.dungcu.map(t=><span className="chip" key={t}>{t}</span>)}</div>
+        </div>
+        {!!dung.length && <div className="card">
+          <h3>Dự án dùng kỹ năng này</h3>
+          {dung.map(p=>(
+            <div className="row" key={p.id} style={{marginTop:10,cursor:'pointer'}} onClick={()=>{close(); open(p.id);}}>
+              <div style={{flex:1}}><b style={{fontSize:13.5}}>{p.name}</b>
+                <p className="tiny" style={{marginTop:1}}>{p.cat} · {DIFF[p.diff]} · {p.hours} giờ</p></div>
+              <span style={{color:'var(--acc)',fontSize:18}}>›</span>
+            </div>))}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- chi tiet du an */
+function ProjectView({id,close,doing,setDoing,shop,setShop,dims,body,setBody,start,openKy,lamNgay,clearLam,kho}){
+  const p = byId(id);
+  const thieu = thieuDC(p,kho);
+  const [seg,setSeg] = useState(()=>{ const m=/[#&]s=(\w+)/.exec(location.hash); return m? m[1] : 'tq'; });
+  const [focus,setFocus] = useState(!!lamNgay);
+  useEffect(()=>{ if(lamNgay){ setSeg('bw'); clearLam && clearLam(); } },[]);
+  const d = doing[id];
+  const stepState = (i)=> (d && d.steps && d.steps[i]) || {done:false,note:''};
+  const setStep = (i,patch)=>{
+    if(!d) return;
+    const steps = {...(d.steps||{})}; steps[i] = {...stepState(i),...patch};
+    setDoing({...doing,[id]:{...d,steps}});
+  };
+  const doneCount = d? Object.values(d.steps||{}).filter(s=>s.done).length : 0;
+  const pct = Math.round(doneCount/p.steps.length*100);
+  const segs = [['tq','Tổng quan'],['vl','Vật liệu'],['bw','Các bước']];
+  if(p.hasDraw) segs.push(['bv','Bản vẽ']);
+
+  return (
+    <div className="sheet">
+      <div className="shd">
+        <button className="back" onClick={close}>‹ Quay lại</button>
+        <h1 style={{fontSize:18,fontWeight:600,lineHeight:1.3}}>{p.name}</h1>
+        <div className="meta" style={{marginTop:7}}>
+          <span className="chip">{p.cat}</span><span className="chip">{DIFF[p.diff]}</span>
+          <span className="chip">{p.hours} giờ</span><span className="chip acc">{vnd(projCost(p))}</span>
+        </div>
+        <div className="seg">{segs.map(([k,l])=>
+          <button key={k} className={seg===k?'on':''} onClick={()=>setSeg(k)}>{l}</button>)}</div>
+      </div>
+      <div className="wrap">
+        {seg==='tq' && <>
+          <div className="card"><p className="muted" style={{fontSize:14,lineHeight:1.6}}>{p.blurb}</p></div>
+          {d ? <div className="card">
+              <div className="between"><b style={{fontSize:14}}>Đang làm — {doneCount}/{p.steps.length} bước</b>
+                <span className="tiny">bắt đầu {dateVN(d.started)}</span></div>
+              <div className="bar"><i style={{width:pct+'%'}}/></div>
+              {pct===100 && <p className="tiny" style={{marginTop:9,color:'var(--acc)'}}>Xong hết rồi — sang tab Thành phẩm lưu lại ảnh.</p>}
+            </div>
+            : <button className="btn" style={{marginTop:12}} onClick={()=>start(id)}>Bắt đầu làm dự án này</button>}
+          <div className="card">
+            <h3>Dụng cụ cần có</h3>
+            {p.tools.map((t,i)=><p key={i} className="muted" style={{marginTop:6}}>· {t}</p>)}
+            {!!thieu.length && <div className="row" style={{marginTop:11,alignItems:'flex-start',
+              padding:'9px 11px',background:'var(--card2)',borderRadius:11,border:'1px solid var(--line)'}}>
+              <span style={{color:'var(--warn)',fontSize:15}}>!</span>
+              <div style={{flex:1}}>
+                <b style={{fontSize:13}}>Kho nhà thiếu {thieu.length} món</b>
+                <p className="tiny" style={{marginTop:2}}>{thieu.map(t=>dcById(t).ten).join(' · ')}</p>
+              </div>
+            </div>}
+            {p.skills && !!p.skills.length && <>
+              <p className="tiny" style={{marginTop:12,marginBottom:6}}>Kỹ năng dùng tới</p>
+              <div className="meta">{p.skills.map(s=>{ const k=kyById(s); return k?
+                <span className="chip acc tap" key={s} onClick={()=>openKy(k.id)}>{k.icon} {k.ten} ›</span> : null; })}</div>
+            </>}
+          </div>
+          {p.loi && !!p.loi.length && <div className="card">
+            <h3>Lỗi hay gặp</h3>
+            {p.loi.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>✕ {t}</p>)}
+          </div>}
+          {p.bien && !!p.bien.length && <div className="card">
+            <h3>Làm khác đi</h3>
+            {p.bien.map((t,i)=><p key={i} className="muted" style={{marginTop:7,paddingLeft:17,textIndent:-17}}>→ {t}</p>)}
+          </div>}
+          {p.warns && p.warns.map((w,i)=>
+            <div key={i} className="warnbox"><h4>{w.t}</h4><p>{w.d}</p></div>)}
+        </>}
+
+        {seg==='vl' && <MatList p={p} shop={shop} setShop={setShop}/>}
+
+        {seg==='bw' && <>
+        {d && <button className="btn" style={{marginTop:12}} onClick={()=>setFocus(true)}>
+          ▶ Vào chế độ làm — từng bước một</button>}
+        <div className="card">
+          {!d && <p className="tiny" style={{marginBottom:10}}>Bấm “Bắt đầu làm” ở tab Tổng quan để tick được từng bước.</p>}
+          {p.steps.map((s,i)=>{
+            const st = stepState(i);
+            return (
+              <div className="step" key={i}>
+                <Tick on={st.done} label={'bước '+(i+1)+': '+s.t} onClick={()=>d&&setStep(i,{done:!st.done})}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="sn">BƯỚC {String(i+1).padStart(2,'0')}</div>
+                  <h3 style={{marginTop:2,fontSize:15}}>{s.t}</h3>
+                  <p className="muted" style={{marginTop:4}}>{s.d}</p>
+                  {s.fig && FIG[s.fig] &&
+                    <div className="fig" dangerouslySetInnerHTML={{__html:figHTML(s.fig,dims)}}/>}
+                  {d && <textarea style={{marginTop:8,minHeight:44,fontSize:13}} placeholder="Ghi chú của Huy ở bước này…"
+                    value={st.note} onChange={e=>setStep(i,{note:e.target.value})}/>}
+                </div>
+              </div>);
+          })}
+        </div></>}
+
+        {seg==='bv' && <DomeDraw dims={dims} body={body} setBody={setBody}/>}
+      </div>
+      {focus && <FocusMode id={id} close={()=>setFocus(false)} doing={doing} setDoing={setDoing} dims={dims}/>}
+    </div>
+  );
+}
+
+function MatList({p,shop,setShop}){
+  const key = i => p.id+'::'+i;
+  const bought = i => !!shop[key(i)];
+  const toggle = i => { const s={...shop}; if(s[key(i)]) delete s[key(i)]; else s[key(i)]={at:today()}; setShop(s); };
+  const total = projCost(p);
+  const left  = p.mats.reduce((s,m,i)=> s + (bought(i)?0:m.p), 0);
+  return (
+    <div className="card">
+      {p.mats.map((m,i)=>(
+        <div className="mat" key={i}>
+          <Tick on={bought(i)} label={'đã mua '+m.n} onClick={()=>toggle(i)}/>
+          <div style={{flex:1,minWidth:0}}>
+            <div className="between"><b style={{fontSize:14,textDecoration:bought(i)?'line-through':'none',opacity:bought(i)?.55:1}}>{m.n}</b>
+              <span style={{color:'var(--acc)',fontWeight:600,fontSize:13.5,whiteSpace:'nowrap'}}>{m.p?vnd(m.p):'có sẵn'}</span></div>
+            <p className="tiny" style={{marginTop:2}}>{m.q}{m.note?' · '+m.note:''}</p>
+          </div>
+        </div>))}
+      <div className="between" style={{marginTop:12,paddingTop:12,borderTop:'1px solid var(--line)'}}>
+        <span className="muted">Tổng {vndFull(total)}</span>
+        <b style={{color:'var(--acc)',fontSize:18}}>còn phải mua {vndFull(left)}</b>
+      </div>
+    </div>
+  );
+}
+
+function DomeDraw({dims,body,setBody}){
+  const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
+  return (<>
+    <div className="card">
+      <h3>Số đo của Huy</h3>
+      <p className="tiny" style={{marginTop:3}}>Đổi hai số này thì dưỡng cắt ở bước 02 và 05 tự tính lại.</p>
+      <div className="grid2" style={{marginTop:11}}>
+        <div><label className="fl">Chu vi vòng đầu (mm)</label>
+          <input inputMode="numeric" value={body.chuVi} onChange={e=>set('chuVi',e.target.value)}/></div>
+        <div><label className="fl">Cung qua đỉnh (mm)</label>
+          <input inputMode="numeric" value={body.cung} onChange={e=>set('cung',e.target.value)}/></div>
+      </div>
+      <div className="grid2" style={{marginTop:11}}>
+        <div className="kpi"><b>{dims.nanL} mm</b><span>dài mỗi nan (6 cái, 30→20 mm)</span></div>
+        <div className="kpi"><b>{dims.daiL} mm</b><span>dài đai dây dù bản 25 mm</span></div>
+        <div className="kpi"><b>{dims.spacing} mm</b><span>khoảng cách hai chân nan</span></div>
+        <div className="kpi"><b>Ø60 mm</b><span>hai đĩa chỏm đỉnh</span></div>
+      </div>
+    </div>
+    <div className="card">
+      <h3>Mặt cắt dọc</h3>
+      <p className="tiny" style={{marginTop:3}}>Khe rỗng 12 mm nằm trên đỉnh đầu · lớp xốp chịu va đập giữ nguyên 25 mm.</p>
+      <div className="fig" dangerouslySetInnerHTML={{__html:figHTML('matcat',dims)}}/>
+      {[['1','Vỏ nhựa ABS','giữ nguyên như mũ đạt chuẩn'],
+        ['2','Xốp EPS 25 mm','không gọt, không khoan một milimét'],
+        ['3','Khe rỗng 12 mm','tóc dựng tự do, hơi ẩm có đường thoát'],
+        ['4','Nan lưới 3D','bấm tay là sập, không tạo điểm cứng'],
+        ['5','Đai gánh tải','trọng lượng dồn xuống chân tóc']].map(([n,t,d2])=>(
+        <div className="row" key={n} style={{marginTop:9,alignItems:'flex-start'}}>
+          <span style={{flex:'0 0 22px',height:22,borderRadius:99,border:'1.4px solid var(--acc)',color:'var(--acc)',
+            fontSize:11.5,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</span>
+          <div style={{flex:1}}><b style={{fontSize:13.5}}>{t}</b>
+            <p className="tiny" style={{marginTop:1}}>{d2}</p></div>
+        </div>))}
+    </div>
+    <div className="card">
+      <h3>Dưỡng cắt</h3>
+      <div className="fig" dangerouslySetInnerHTML={{__html:figHTML('duong',dims)}}/>
+    </div>
+  </>);
+}
+
+/* ---------------------------------------------------------------- dang lam */
+function Doing({doing,setDoing,open,openLam,gal}){
+  const list = Object.keys(doing).map(id=>({id,p:byId(id),st:doing[id]})).filter(x=>x.p);
+  const soXong = x => Object.values(x.st.steps||{}).filter(s=>s.done).length;
+  const pct = x => Math.round(soXong(x)/x.p.steps.length*100);
+  const drop = id => { const d={...doing}; delete d[id]; setDoing(d); };
+  const dangDo = list.filter(x=>pct(x)<100).sort((a,b)=>pct(b)-pct(a));
+  const hoanTat = list.filter(x=>pct(x)===100);
+  const tiep = dangDo[0];
+  const buocTiep = tiep ? (()=>{ for(let i=0;i<tiep.p.steps.length;i++)
+      if(!(tiep.st.steps&&tiep.st.steps[i]&&tiep.st.steps[i].done)) return {i,s:tiep.p.steps[i]};
+    return {i:0,s:tiep.p.steps[0]}; })() : null;
+
+  /* gợi ý: dự án chưa đụng tới, đổi theo ngày cho đỡ chán */
+  const chuaLam = PROJECTS.filter(p=>!doing[p.id]);
+  const mocNgay = parseInt(today().replace(/-/g,''),10) || 0;
+  const goiY = chuaLam.slice().sort((a,b)=>
+    ((a.id.length*7+mocNgay)%chuaLam.length) - ((b.id.length*7+mocNgay)%chuaLam.length)).slice(0,3);
+
+  return (
+    <div>
+      <div className="hd">
+        <h1>Hôm nay</h1>
+        <p>{dangDo.length ? dangDo.length+' dự án đang dở · '+hoanTat.length+' đã xong'
+                          : 'Bàn đang trống — chọn một món để bắt đầu'}</p>
+      </div>
+      <div className="wrap">
+        {tiep && <div className="card hero" onClick={()=>openLam(tiep.id)}>
+          <p className="tiny" style={{color:'var(--acc)',fontWeight:600,letterSpacing:'.04em'}}>LÀM TIẾP</p>
+          <h3 style={{marginTop:5,fontSize:17}}>{tiep.p.name}</h3>
+          <p className="muted" style={{marginTop:6}}>
+            Bước {buocTiep.i+1}/{tiep.p.steps.length} — {buocTiep.s.t}</p>
+          <div className="bar" style={{marginTop:10}}><i style={{width:pct(tiep)+'%'}}/></div>
+          <button className="btn" style={{marginTop:12}}>▶ Vào chế độ làm</button>
+        </div>}
+
+        {dangDo.slice(1).map(x=>(
+          <div className="card" key={x.id}>
+            <div className="pcard" onClick={()=>open(x.id)}>
+              <Thumb p={x.p}/>
+              <div style={{flex:1,minWidth:0}}>
+                <h3>{x.p.name}</h3>
+                <p className="tiny" style={{marginTop:3}}>bắt đầu {dateVN(x.st.started)} · {soXong(x)}/{x.p.steps.length} bước</p>
+                <div className="bar"><i style={{width:pct(x)+'%'}}/></div>
+              </div>
+            </div>
+            <div className="row" style={{marginTop:11}}>
+              <button className="btn sm" onClick={()=>openLam(x.id)}>Làm tiếp</button>
+              <button className="btn sm ghost" onClick={()=>{ if(confirm('Bỏ dự án này khỏi danh sách đang làm?')) drop(x.id); }}>Bỏ khỏi danh sách</button>
+            </div>
+          </div>))}
+
+        {!!hoanTat.length && <>
+          <p className="secttl">Đã xong</p>
+          {hoanTat.map(x=>(
+            <div className="card pcard" key={x.id} onClick={()=>open(x.id)}>
+              <div className="thumb" style={{flex:'0 0 44px',height:44,fontSize:20,color:'var(--acc)'}}>✓</div>
+              <div style={{flex:1,minWidth:0}}>
+                <h3 style={{fontSize:14.5}}>{x.p.name}</h3>
+                <p className="tiny" style={{marginTop:2}}>
+                  {gal && gal.some(g=>g.projId===x.id) ? 'đã lưu thành phẩm' : 'chưa chụp lại thành phẩm'}</p>
+              </div>
+            </div>))}
+        </>}
+
+        {!!goiY.length && <>
+          <p className="secttl">{dangDo.length ? 'Làm thêm món này nữa?' : 'Bắt đầu từ đây'}</p>
+          {goiY.map(p=>(
+            <div className="card pcard" key={p.id} onClick={()=>open(p.id)}>
+              <Thumb p={p}/>
+              <div style={{flex:1,minWidth:0}}>
+                <h3 style={{fontSize:14.5}}>{p.name}</h3>
+                <div className="meta"><span className="chip">{DIFF[p.diff]}</span>
+                  <span className="chip">{gio(p.hours)}</span>
+                  <span className="chip acc">{vnd(projCost(p))}</span></div>
+              </div>
+            </div>))}
+        </>}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- di cho */
+function chep(txt, ok){
+  const done = ()=>ok && ok();
+  try{
+    if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(txt).then(done, ()=>fallback()); return; }
+  }catch(e){}
+  fallback();
+  function fallback(){
+    const ta=document.createElement('textarea'); ta.value=txt;
+    ta.style.cssText='position:fixed;top:-1000px;opacity:0'; document.body.appendChild(ta);
+    ta.select();
+    try{ document.execCommand('copy'); done(); }catch(e){ alert('Máy không cho chép tự động. Danh sách:\n\n'+txt); }
+    document.body.removeChild(ta);
+  }
+}
+
+function Shop({doing,shop,setShop,open}){
+  const [view,setView] = useState('noi');
+  const [xong,setXong] = useState(false);
+  const ids = Object.keys(doing).filter(id=>byId(id));
+  const key = (id,i)=> id+'::'+i;
+  const toggle = k => { const s={...shop}; if(s[k]) delete s[k]; else s[k]={at:today()}; setShop(s); };
+
+  /* mọi món của các dự án đang làm, phẳng ra một danh sách */
+  const items = [];
+  ids.forEach(id=>{ const p=byId(id);
+    p.mats.forEach((m,i)=> items.push({...m, k:key(id,i), pid:id, pname:p.name, co:!m.p||m.mua==='nha'})); });
+  const need  = items.filter(x=>!shop[x.k]).reduce((s,x)=>s+x.p,0);
+  const spent = items.filter(x=> shop[x.k]).reduce((s,x)=>s+x.p,0);
+  const conlai = items.filter(x=>!shop[x.k]).length;
+
+  /* gom theo nơi mua, nơi nào còn nhiều món chưa mua thì đứng trước */
+  const nhom = {};
+  items.forEach(x=>{ const g=x.mua||'cho'; (nhom[g]=nhom[g]||[]).push(x); });
+  const thutu = Object.keys(nhom).sort((a,b)=>
+    nhom[b].filter(x=>!shop[x.k]).length - nhom[a].filter(x=>!shop[x.k]).length);
+
+  const tickCa = arr => { const s={...shop}; const chuaXong=arr.some(x=>!s[x.k]);
+    arr.forEach(x=>{ if(chuaXong) s[x.k]={at:today()}; else delete s[x.k]; }); setShop(s); };
+
+  const vanban = ()=>{
+    const L=['DANH SÁCH ĐI CHỢ — Xưởng Nhà'];
+    thutu.forEach(g=>{ const chua=nhom[g].filter(x=>!shop[x.k]); if(!chua.length) return;
+      L.push('', (MUA[g]||g).toUpperCase());
+      chua.forEach(x=> L.push('- '+x.n+' · '+x.q+(x.p?' · ~'+vnd(x.p):'')));
+    });
+    L.push('', 'Tổng còn phải mua: '+vndFull(need));
+    return L.join('\n');
+  };
+
+  const Mon = ({x,showProj}) => { const b=!!shop[x.k];
+    return (
+      <div className="mat">
+        <Tick on={b} label={'đã mua '+x.n} onClick={()=>toggle(x.k)}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div className="between">
+            <b style={{fontSize:13.5,textDecoration:b?'line-through':'none',opacity:b?.5:1}}>{x.n}</b>
+            <span style={{color:b?'var(--tx3)':(x.co?'var(--tx2)':'var(--acc)'),fontWeight:600,fontSize:13,whiteSpace:'nowrap'}}>
+              {x.co?'có sẵn':vnd(x.p)}</span>
+          </div>
+          <p className="tiny" style={{marginTop:2}}>{x.q}{showProj?' · '+x.pname:''}{x.note?' — '+x.note:''}</p>
+        </div>
+      </div>);
+  };
+
+  return (
+    <div>
+      <div className="hd">
+        <h1>Đi chợ</h1>
+        <p>{conlai ? conlai+' món chưa mua · '+vndFull(need) : 'Mua đủ rồi'}</p>
+        {!!ids.length && <div className="seg2">
+          <button className={view==='noi'?'on':''} onClick={()=>setView('noi')}>Theo nơi mua</button>
+          <button className={view==='du'?'on':''} onClick={()=>setView('du')}>Theo dự án</button>
+        </div>}
+      </div>
+      <div className="wrap">
+        {!ids.length && <div className="empty">Chưa có gì để mua.<br/>Bắt đầu một dự án thì vật liệu của nó hiện ở đây.</div>}
+        {!!ids.length && <>
+          <div className="grid2" style={{marginTop:12}}>
+            <div className="kpi"><b>{vndFull(need)}</b><span>còn phải mua</span></div>
+            <div className="kpi"><b style={{color:'var(--tx2)'}}>{vndFull(spent)}</b><span>đã mua</span></div>
+          </div>
+          <button className="btn ghost" style={{marginTop:10}}
+            onClick={()=>chep(vanban(),()=>{ setXong(true); setTimeout(()=>setXong(false),1800); })}>
+            {xong ? '✓ Đã chép — dán vào Zalo được rồi' : 'Chép danh sách để gửi'}
+          </button>
+        </>}
+
+        {view==='noi' && thutu.map(g=>{ const arr=nhom[g]; const chua=arr.filter(x=>!shop[x.k]).length;
+          return (
+            <div className="card" key={g}>
+              <div className="between" style={{marginBottom:4}}>
+                <b style={{fontSize:14.5}}>{MUA[g]||g}</b>
+                <button className="btn sm ghost" onClick={()=>tickCa(arr)}>{chua?'Tick cả nhóm':'Bỏ tick'}</button>
+              </div>
+              <p className="tiny" style={{marginBottom:4}}>{chua? chua+'/'+arr.length+' món chưa mua' : 'xong nhóm này'}</p>
+              {arr.map(x=><Mon key={x.k} x={x} showProj={true}/>)}
+            </div>);
+        })}
+
+        {view==='du' && ids.map(id=>{ const p=byId(id); const arr=items.filter(x=>x.pid===id);
+          return (
+            <div className="card" key={id}>
+              <div className="between" style={{marginBottom:6}}>
+                <b style={{fontSize:14.5}}>{p.name}</b>
+                <button className="btn sm ghost" onClick={()=>open(id)}>Mở</button>
+              </div>
+              {arr.map(x=><Mon key={x.k} x={x}/>)}
+            </div>);
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- thanh pham */
+function shrink(file,cb){
+  const r = new FileReader();
+  r.onload = e => { const im=new Image();
+    im.onload = ()=>{ const s=Math.min(1,900/Math.max(im.width,im.height));
+      const c=document.createElement('canvas'); c.width=Math.round(im.width*s); c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      cb(c.toDataURL('image/jpeg',0.72)); };
+    im.onerror = ()=>cb(null); im.src = e.target.result; };
+  r.readAsDataURL(file);
+}
+
+function AnhO({label,url,onPick,onClear}){
+  return (
+    <div className="slot">
+      {url
+        ? <><img src={url}/><button className="xbtn" onClick={onClear}>✕</button></>
+        : <label className="pick">
+            <span>{label}</span><span className="tiny">chạm để chọn ảnh</span>
+            <input type="file" accept="image/*" style={{display:'none'}}
+              onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(f) shrink(f,u=>u&&onPick(u)); }}/>
+          </label>}
+    </div>
+  );
+}
+
+function Gallery({gal,setGal,doing,open}){
+  const [add,setAdd] = useState(false);
+  const [xem,setXem] = useState(null);
+  const [loc,setLoc] = useState('all');
+  const rong = {projId:'', note:'', truoc:null, sau:null, stars:4, gio:''};
+  const [draft,setDraft] = useState(rong);
+
+  const save = ()=>{
+    if(!draft.projId){ alert('Chọn dự án đã.'); return; }
+    if(!draft.sau && !draft.truoc){ alert('Thêm ít nhất một tấm ảnh.'); return; }
+    setGal([{...draft, id:'g'+Date.now(), date:today()}, ...gal]);
+    setDraft(rong); setAdd(false);
+  };
+  const del = id => { if(confirm('Xoá mục này?')){ setGal(gal.filter(g=>g.id!==id)); setXem(null); } };
+
+  const duAn = [...new Set(gal.map(g=>g.projId))].map(byId).filter(Boolean);
+  const list = gal.filter(g=> loc==='all' || g.projId===loc);
+  const g0 = xem ? gal.find(g=>g.id===xem) : null;
+
+  return (
+    <div>
+      <div className="hd">
+        <h1>Thành phẩm</h1>
+        <p>{gal.length ? gal.length+' lần làm đã ghi lại' : 'Chưa có gì — làm xong món đầu tiên thì chụp lại'}</p>
+        {duAn.length>1 && <div className="seg">
+          <button className={loc==='all'?'on':''} onClick={()=>setLoc('all')}>Tất cả</button>
+          {duAn.map(p=><button key={p.id} className={loc===p.id?'on':''} onClick={()=>setLoc(p.id)}>{p.name.split(' ').slice(0,3).join(' ')}</button>)}
+        </div>}
+      </div>
+      <div className="wrap">
+        {!add && <button className="btn" style={{marginTop:12}} onClick={()=>setAdd(true)}>+ Ghi lại một thành phẩm</button>}
+
+        {add && <div className="card">
+          <label className="fl">Dự án</label>
+          <select value={draft.projId} onChange={e=>setDraft({...draft,projId:e.target.value})}>
+            <option value="">— chọn dự án —</option>
+            <optgroup label="Đang làm / đã làm">
+              {Object.keys(doing).map(byId).filter(Boolean).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </optgroup>
+            <optgroup label="Tất cả">
+              {PROJECTS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
+            </optgroup>
+          </select>
+
+          <div className="grid2" style={{marginTop:12}}>
+            <AnhO label="TRƯỚC" url={draft.truoc}
+              onPick={u=>setDraft(d=>({...d,truoc:u}))} onClear={()=>setDraft(d=>({...d,truoc:null}))}/>
+            <AnhO label="SAU" url={draft.sau}
+              onPick={u=>setDraft(d=>({...d,sau:u}))} onClear={()=>setDraft(d=>({...d,sau:null}))}/>
+          </div>
+
+          <label className="fl" style={{marginTop:12}}>Làm hết bao lâu (giờ)</label>
+          <input inputMode="decimal" placeholder="ví dụ 2,5" value={draft.gio}
+            onChange={e=>setDraft({...draft,gio:e.target.value})}/>
+
+          <label className="fl" style={{marginTop:12}}>Làm xong thấy sao?</label>
+          <textarea placeholder="Chỗ nào khó, lần sau sửa gì, mua thiếu thứ gì…" value={draft.note}
+            onChange={e=>setDraft({...draft,note:e.target.value})}/>
+
+          <div className="row" style={{marginTop:10}}>
+            <span className="tiny">Hài lòng:</span>
+            {[1,2,3,4,5].map(n=>
+              <span key={n} onClick={()=>setDraft({...draft,stars:n})}
+                style={{cursor:'pointer',fontSize:21,color:n<=draft.stars?'var(--warn)':'var(--line)'}}>★</span>)}
+          </div>
+          <div className="row" style={{marginTop:12}}>
+            <button className="btn" onClick={save}>Lưu</button>
+            <button className="btn ghost" onClick={()=>{setAdd(false); setDraft(rong);}}>Huỷ</button>
+          </div>
+        </div>}
+
+        {!list.length && !add && <div className="empty">
+          Chưa có thành phẩm nào.<br/>Làm xong một món thì chụp lại — lần sau làm sẽ nhanh hơn.</div>}
+
+        <div className="gal">
+          {list.map(g=>{ const p=byId(g.projId); const anh=g.sau||g.truoc||g.img;
+            return (
+              <figure key={g.id} onClick={()=>setXem(g.id)}>
+                {anh ? <img src={anh}/> :
+                  <div style={{height:118,display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx3)',fontSize:12}}>không có ảnh</div>}
+                {g.truoc && g.sau && <span className="badge">trước / sau</span>}
+                <figcaption>
+                  <b style={{color:'var(--tx)',fontSize:12.5,display:'block'}}>{p?p.name:'(dự án đã xoá)'}</b>
+                  <span className="tiny">{dateVN(g.date)}<span className="dot"/>{'★'.repeat(g.stars||0)}</span>
+                </figcaption>
+              </figure>);
+          })}
+        </div>
+      </div>
+
+      {g0 && <div className="sheet" style={{zIndex:60}}>
+        <div className="shd">
+          <button className="back" onClick={()=>setXem(null)}>‹ Đóng</button>
+          <h1 style={{fontSize:17,fontWeight:600}}>{(byId(g0.projId)||{}).name||'Thành phẩm'}</h1>
+          <p className="tiny" style={{marginTop:3}}>{dateVN(g0.date)}
+            {g0.gio? ' · làm hết '+g0.gio+' giờ':''} · {'★'.repeat(g0.stars||0)}</p>
+        </div>
+        <div className="wrap">
+          {g0.truoc && <div className="card"><p className="tiny" style={{marginBottom:7}}>TRƯỚC</p>
+            <img src={g0.truoc} style={{width:'100%',borderRadius:11,display:'block'}}/></div>}
+          {(g0.sau||g0.img) && <div className="card"><p className="tiny" style={{marginBottom:7}}>SAU</p>
+            <img src={g0.sau||g0.img} style={{width:'100%',borderRadius:11,display:'block'}}/></div>}
+          {g0.note && <div className="card"><h3>Ghi lại</h3>
+            <p className="muted" style={{marginTop:6,whiteSpace:'pre-wrap'}}>{g0.note}</p></div>}
+          {byId(g0.projId) && <button className="btn ghost" style={{marginTop:12}}
+            onClick={()=>{ setXem(null); open(g0.projId); }}>Mở lại dự án này</button>}
+          <button className="btn ghost" style={{marginTop:10,color:'var(--bad)',borderColor:'var(--bad)'}}
+            onClick={()=>del(g0.id)}>Xoá mục này</button>
+        </div>
+      </div>}
+    </div>
+  );
+}
+/* ---------------------------------------------------------------- toi */
+/* ---- sao luu ---- */
+function goiDuLieu(){
+  const d = {app:'xuongnha', ban:1, ngay:today(), kho:{}};
+  Object.values(K).forEach(k => { const v = store.get(k,null); if(v!==null) d.kho[k]=v; });
+  return d;
+}
+function taiVe(ten, noiDung){
+  try{
+    const b = new Blob([noiDung], {type:'application/json'});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement('a'); a.href=u; a.download=ten;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(u), 4000);
+    return true;
+  }catch(e){ return false; }
+}
+function coCu(){ /* ước lượng chỗ đang chiếm, tính theo ký tự */
+  let n=0; Object.values(K).forEach(k=>{ try{ const v=localStorage.getItem(k); if(v) n+=v.length; }catch(e){} });
+  return n;
+}
+
+function Me({body,setBody,doing,gal,shop,light,setLight,dims,kho,setKho}){
+  const togDC = id => setKho(kho.includes(id) ? kho.filter(x=>x!==id) : kho.concat(id));
+  const thieuTien = DUNGCU.filter(d=>d.nen && !kho.includes(d.id)).reduce((s,d)=>s+d.p,0);
+  const set = (k,v)=>{ const n=parseInt(v||0,10); setBody({...body,[k]:isNaN(n)?0:n}); };
+  const started = Object.keys(doing).length;
+  const finished = Object.keys(doing).filter(id=>{ const p=byId(id); if(!p) return false;
+    return Object.values(doing[id].steps||{}).filter(s=>s.done).length===p.steps.length; }).length;
+  let spent=0; Object.keys(shop).forEach(k=>{ const [id,i]=k.split('::'); const p=byId(id); if(p&&p.mats[i]) spent+=p.mats[i].p; });
+  const wipe = ()=>{ if(confirm('Xoá toàn bộ dữ liệu trong app? Không lấy lại được.\n\nNên bấm "Sao lưu ra file" trước.')){
+    Object.values(K).forEach(k=>store.del(k)); location.reload(); } };
+  /* giờ thật đã bỏ ra, lấy từ các mục thành phẩm có khai */
+  const gioThat = gal.reduce((s,g)=> s + (parseFloat(String(g.gio||'').replace(',','.'))||0), 0);
+  return (
+    <div>
+      <div className="hd"><h1>Tôi</h1><p>Số đo, thống kê, cài đặt</p></div>
+      <div className="wrap">
+        <div className="grid2" style={{marginTop:12}}>
+          <div className="kpi"><b>{started}</b><span>dự án đã bắt tay vào</span></div>
+          <div className="kpi"><b>{finished}</b><span>dự án làm xong</span></div>
+          <div className="kpi"><b>{gal.length}</b><span>thành phẩm đã lưu</span></div>
+          <div className="kpi"><b style={{fontSize:16}}>{vndFull(spent)}</b><span>vật liệu đã mua</span></div>
+          {gioThat>0 && <div className="kpi"><b>{String(gioThat).replace('.',',')} giờ</b><span>đã bỏ ra, theo ghi chép của Huy</span></div>}
+          {kho.length>0 && <div className="kpi"><b>{kho.length}/{DUNGCU.length}</b><span>dụng cụ đã có trong nhà</span></div>}
+        </div>
+        <div className="card">
+          <div className="between"><h3>Kho dụng cụ nhà mình</h3>
+            <span className="tiny">{kho.length}/{DUNGCU.length}</span></div>
+          <p className="tiny" style={{marginTop:3}}>Tick những món đã có. App sẽ báo dự án nào còn thiếu dụng cụ, và lọc ra những dự án làm được ngay.</p>
+          {DUNGCU.map(d=>{ const co=kho.includes(d.id);
+            return (
+              <div className="mat" key={d.id}>
+                <Tick on={co} label={'đã có '+d.ten} onClick={()=>togDC(d.id)}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="between">
+                    <b style={{fontSize:13.5,opacity:co?.55:1}}>{d.ten}</b>
+                    <span className="tiny" style={{whiteSpace:'nowrap'}}>{co?'đã có':'~'+vnd(d.p)}</span>
+                  </div>
+                  {!!d.nen && !co && <p className="tiny" style={{marginTop:2,color:'var(--warn)'}}>nên có — dùng ở rất nhiều dự án</p>}
+                </div>
+              </div>);
+          })}
+          {thieuTien>0 && <p className="tiny" style={{marginTop:11,paddingTop:11,borderTop:'1px solid var(--line)'}}>
+            Sắm đủ bộ nên có còn thiếu khoảng <b style={{color:'var(--acc)'}}>{vndFull(thieuTien)}</b>.</p>}
+        </div>
+        <div className="card">
+          <h3>Số đo đầu</h3>
+          <p className="tiny" style={{marginTop:3}}>Dùng cho DOME-01 và các dự án đồ đội đầu sau này.</p>
+          <div className="grid2" style={{marginTop:11}}>
+            <div><label className="fl">Chu vi vòng đầu (mm)</label>
+              <input inputMode="numeric" value={body.chuVi} onChange={e=>set('chuVi',e.target.value)}/></div>
+            <div><label className="fl">Cung qua đỉnh (mm)</label>
+              <input inputMode="numeric" value={body.cung} onChange={e=>set('cung',e.target.value)}/></div>
+          </div>
+          <p className="tiny" style={{marginTop:9}}>→ nan {dims.nanL} mm · đai {dims.daiL} mm · chân nan cách nhau {dims.spacing} mm</p>
+        </div>
+        <div className="card">
+          <div className="between"><div><h3>Giao diện sáng</h3>
+            <p className="tiny" style={{marginTop:2}}>Dễ nhìn hơn khi làm ngoài sân.</p></div>
+            <button className="btn sm" onClick={()=>setLight(!light)}>{light?'Đang sáng':'Đang tối'}</button></div>
+        </div>
+        <div className="card">
+          <h3>Cài lên màn hình chính</h3>
+          <p className="tiny" style={{marginTop:4,lineHeight:1.6}}>
+            Mở app bằng Chrome trên điện thoại → menu ⋮ → <b style={{color:'var(--tx)'}}>Thêm vào màn hình chính</b>.
+            Trên iPhone dùng Safari → nút Chia sẻ → Thêm vào MH chính.
+            Cài rồi thì mở như một app thật, và <b style={{color:'var(--tx)'}}>mất mạng vẫn dùng được</b> —
+            trừ lần mở đầu tiên cần mạng để tải thư viện về máy.
+          </p>
+        </div>
+        <div className="card">
+          <h3>Dữ liệu</h3>
+          <p className="tiny" style={{marginTop:3,lineHeight:1.6}}>
+            Mọi thứ lưu ngay trong trình duyệt máy này, không gửi đi đâu cả — nghĩa là
+            <b style={{color:'var(--tx)'}}> xoá lịch sử trình duyệt là mất sạch</b>. Thỉnh thoảng bấm sao lưu một lần.
+            Đang chiếm khoảng {(coCu()/1024).toFixed(0)} KB{gal.length? ' (chủ yếu là '+gal.length+' ảnh thành phẩm)':''}.
+          </p>
+          <div className="row" style={{marginTop:11}}>
+            <button className="btn sm" onClick={()=>{
+              const ok = taiVe('xuongnha-'+today()+'.json', JSON.stringify(goiDuLieu()));
+              if(!ok) alert('Máy không cho tải file. Thử mở app bằng Chrome.');
+            }}>Sao lưu ra file</button>
+            <label className="btn sm ghost" style={{textAlign:'center'}}>
+              Phục hồi từ file
+              <input type="file" accept="application/json,.json" style={{display:'none'}}
+                onChange={e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return;
+                  const r=new FileReader();
+                  r.onload=ev=>{ try{
+                      const d=JSON.parse(ev.target.result);
+                      if(!d || d.app!=='xuongnha' || !d.kho) throw new Error('sai định dạng');
+                      const soDA=Object.keys(d.kho['diy.doing']||{}).length;
+                      const soAnh=(d.kho['diy.gallery']||[]).length;
+                      if(!confirm('Bản lưu ngày '+dateVN(d.ngay||'')+': '+soDA+' dự án đang làm, '+soAnh+' thành phẩm.\n\nGhi đè toàn bộ dữ liệu hiện tại?')) return;
+                      Object.keys(d.kho).forEach(k=>store.set(k,d.kho[k]));
+                      location.reload();
+                    }catch(err){ alert('Không đọc được file này: '+err.message); } };
+                  r.readAsText(f); e.target.value=''; }}/>
+            </label>
+          </div>
+          <button className="btn ghost sm" style={{marginTop:11,color:'var(--bad)',borderColor:'var(--bad)'}} onClick={wipe}>Xoá toàn bộ dữ liệu</button>
+        </div>
+        <p className="tiny" style={{textAlign:'center',marginTop:18}}>Xưởng Nhà · {PROJECTS.length} dự án · {KYNANG.length} kỹ năng</p>
+      </div>
+    </div>
+  );
+}
+
+const boot = document.getElementById('boot'); if(boot) boot.remove();
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
