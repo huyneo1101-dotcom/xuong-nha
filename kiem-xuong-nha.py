@@ -6,7 +6,7 @@
     python3 kiem-xuong-nha.py --ca       chạy bộ ca, in bảng ca đỏ
     python3 kiem-xuong-nha.py --tu-kiem  dựng từng bản hỏng, đòi đúng ca của nó đỏ
 
-Năm lối hỏng của app này, cả năm đều KHÔNG phát ra tiếng:
+Sáu lối hỏng của app này, cả sáu đều KHÔNG phát ra tiếng:
 
   · `index.html` lệch `nguon/app.jsx` ⇒ người dùng mở ra vẫn thấy app chạy ngon,
     chỉ là bản của lần dựng trước; không lỗi nào, không cảnh báo nào;
@@ -18,7 +18,10 @@ Năm lối hỏng của app này, cả năm đều KHÔNG phát ra tiếng:
     lúc có mạng thì mọi thứ bình thường;
   · câu ranh giới an toàn của DOME-01 biến mất khỏi mã ⇒ app vẫn đủ chức năng, chỉ
     khác là người làm không còn được nhắc rằng gọt xốp mũ bảo hiểm 25 mm còn 13 mm
-    đẩy gia tốc dội lại từ ~213 g lên ~431 g. Đây là lỗi đắt nhất và câm nhất.
+    đẩy gia tốc dội lại từ ~213 g lên ~431 g. Đây là lỗi đắt nhất và câm nhất;
+  · `projCost` đổi sang cộng nhầm ô số lượng (`m.q`, một chuỗi như «1 cái») thay vì
+    ô giá (`m.p`) ⇒ JavaScript nối chuỗi trong im lặng, tổng tiền chợ hiện sai mà
+    không lỗi nào bật lên.
 """
 
 import io
@@ -92,7 +95,27 @@ def soi(thu=THU_APP, dung_lai=True):
         if manh not in jsx:
             loi.append('mã không còn %s («%s») — người làm mất lời cảnh báo mà app '
                        'vẫn đủ chức năng' % (y, manh))
+
+    # ── luật 7: tổng tiền vật liệu cộng đúng trường giá ───────────────────────
+    loi += _soi_tien_vat_lieu(jsx)
     return loi
+
+
+def _soi_tien_vat_lieu(jsx):
+    """`projCost` phải cộng trường giá `m.p`, không phải số lượng `m.q` hay ô khác.
+
+    Đây là hàm tính tổng tiền chợ hiện trên từng dự án; đổi nhầm sang cộng ô số
+    lượng (chuỗi kiểu «1 cái») là JavaScript nối chuỗi trong im lặng — tổng tiền hiện
+    ra sai mà không lỗi nào bật lên.
+    """
+    m = re.search(r'projCost\s*=\s*p\s*=>\s*p\.mats\.reduce\(\(s,m\)=>s\+m\.(\w+),0\)', jsx)
+    if not m:
+        return ['không tìm thấy đúng khuôn hàm projCost — không đo được có còn cộng '
+                'đúng giá không']
+    if m.group(1) != 'p':
+        return ['projCost đang cộng trường "%s" thay vì "p" (giá) — tổng tiền chợ '
+                'của mọi dự án tính sai' % m.group(1)]
+    return []
 
 
 def _soi_dung_lai(thu):
@@ -321,14 +344,21 @@ def chay_ca():
                    _co(soi(t, dung_lai=False), 'gia tốc dội lại sau khi gọt')):
             do.append(14)
 
+    # ── luật 7: tổng tiền vật liệu ────────────────────────────────────────────
+    with app_hong({'nguon/app.jsx': lambda s: s.replace(
+            'p.mats.reduce((s,m)=>s+m.p,0)', 'p.mats.reduce((s,m)=>s+m.q,0)', 1)}) as t:
+        if not _ca(15, 'PHẢI CHẶN: projCost cộng nhầm số lượng (m.q) thay vì giá (m.p)',
+                   _co(soi(t, dung_lai=False), 'cộng trường')):
+            do.append(15)
+
     # ── ĐƯỜNG GẮN ─────────────────────────────────────────────────────────────
     with app_hong({'index.html': lambda s: s.replace('</body>', '<!-- sửa tay --></body>', 1)}) as t:
         p = subprocess.run([sys.executable, os.path.abspath(__file__),
                             '--thu-muc', t, '--khong-dung-lai'],
                            capture_output=True, text=True)
-        if not _ca(15, 'ĐƯỜNG GẮN: chạy thẳng trên bản hỏng thì thoát khác 0',
+        if not _ca(16, 'ĐƯỜNG GẮN: chạy thẳng trên bản hỏng thì thoát khác 0',
                    p.returncode != 0):
-            do.append(15)
+            do.append(16)
     return do
 
 
@@ -381,7 +411,7 @@ BAN_HONG = (
     ('bỏ nhánh so vân tay — index.html sửa tay không ai kêu',
      "    elif moc != van_tay(index):\n        loi.append('index.html đã bị sửa tay",
      "    elif False:\n        loi.append('index.html đã bị sửa tay",
-     (2, 15)),
+     (2, 16)),
 
     ('mốc vân tay trống được coi là bình thường (fail-open ở nhánh không đo được)',
      "    if not moc:\n        loi.append('nguon/.van-tay trống",
@@ -459,7 +489,7 @@ BAN_HONG = (
     ('main() không gọi cổng nữa, luôn thoát 0 — cổng dựng xong mà nằm không',
      "    loi = soi(thu, dung_lai='--khong-dung-lai' not in sys.argv)\n    if not loi:",
      "    loi = []\n    if not loi:",
-     (15,)),
+     (16,)),
 )
 
 
